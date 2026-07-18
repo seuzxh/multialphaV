@@ -265,13 +265,19 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 # CONTEXT7_ENABLE_CACHE=true
 ```
 
-### 6.4 关键版本基线（写入后用 `pip show` 核对）
+### 6.4 关键版本基线（核对命令）
 
 | 组件 | 版本 | 核对命令 |
 |---|---|---|
 | Python | 3.10（与官方 CI / 0.8 项目 / constraints 一致） | `python --version` |
-| rdagent | latest main（fork 点之后） | `pip show rdagent` |
-| qlib | 0.9.7（与 0.8 项目一致，保证数据兼容） | `python -c "import qlib;print(qlib.__version__)"` |
+| rdagent | fork 点 commit（当前 `v0.8.0-29-g8f60d6ea`） | `git describe --tags --always`（在 RD-Agent 仓库内） |
+| rdagent 包版本（pip 元数据） | setuptools-scm 动态生成（当前 `0.8.1.dev29`） | `python -c "from importlib.metadata import version; print(version('rdagent'))"` |
+| qlib | 0.9.7（在 Docker 镜像内，主 env 不装） | `docker run --rm local_qlib:v2.0 python -c "import qlib;print(qlib.__version__)"` |
+| pydantic | 2.x（rdagent 依赖，未 pin） | `python -c "import pydantic; print(pydantic.VERSION)"` |
+
+> **同步升级对比**：rdagent 用 `git describe` 的 commit 标识（含 tag + commit 数 + hash）跟踪 fork 点。对比上游时：`git fetch upstream && git log --oneline v0.8.0-29-g8f60d6ea..upstream/main` 可看出上游新增了多少 commit。
+>
+> **注意**：`rdagent.__version__` 属性不存在（setuptools-scm 动态生成不注入包级属性），不要用 `python -c "import rdagent; rdagent.__version__"`。
 | pydantic | 与 rdagent `pyproject.toml` 锁定一致 | `pip show pydantic` |
 
 ---
@@ -487,11 +493,13 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 conda activate multialphav
 cd /home/zxh/projects/1.multialphaV/RD-Agent
 
-# 版本核对
-python -c "import rdagent, qlib, pydantic; print(rdagent.__version__, qlib.__version__, pydantic.VERSION)"
+# 版本核对（注意：rdagent.__version__ 不存在，用 git describe 或 importlib.metadata）
+git describe --tags --always                    # rdagent fork 点 commit（如 v0.8.0-29-g8f60d6ea）
+python --version                                # Python 3.10.x
+python -c "import pydantic; print(pydantic.VERSION)"  # pydantic 2.x
 
-# Qlib 数据可用性
-python -c "import qlib; from qlib.constant import REG_CN; qlib.init(provider_uri='/home/zxh/qlib_data', region=REG_CN); from qlib.data import D; print(len(D.calendar()))"
+# Qlib 数据可用性（qlib 在 Docker 内，主 env 不装；数据软链生效后用 0.8 env 核对）
+/home/zxh/miniconda3/envs/rdagent/bin/python -c "import qlib; from qlib.constant import REG_CN; qlib.init(provider_uri='/home/zxh/qlib_data', region=REG_CN); from qlib.data import D; print(len(D.calendar()))"
 
 # fin_quant 帮助（确认 CLI 装配正确）
 rdagent fin_quant --help

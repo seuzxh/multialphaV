@@ -23,11 +23,16 @@
 |---|---|---|
 | 1 | conda env `multialphav`（Python 3.10）+ `pip install -e .` | ✅ **已完成**（Python 3.10.20 / rdagent 0.8.1.dev29 / pydantic 2.13.4） |
 | 2 | 创建 `.env`（以 CLAUDE.md §6.3 为准） | ✅ **已完成**（继承 0.8 三个 key，load_dotenv 验证通过） |
-| 3 | qlib 数据软链 `~/.qlib/qlib_data/cn_data → /home/zxh/qlib_data` | ⬜ 待执行 |
+| 3 | qlib 数据软链 `~/.qlib/qlib_data/cn_data → /home/zxh/qlib_data` | ⏸️ **暂缓**（用户决定，需 sudo；见下方"阶段 3 暂缓说明"） |
 | 4a | CodeGraph 索引重建 | ✅ **已完成**（230 文件/3635 节点） |
 | 4b | `.gitignore` 加 `.codegraph/` | ✅ **已完成**（multialphaV 根仓库 .gitignore 第 11 行） |
 | 5 | git fork remote 配置 | ✅ **已完成**（origin→fork, upstream→microsoft） |
-| 6 | 验收（multialphav env 跑导入链 + CLI） | ⬜ 待执行（依赖 1-3） |
+| 5b | docker 配置同步 0.8 项目 | ✅ **已完成**（Dockerfile+lock+README，镜像 local_qlib:v2.0 已共享） |
+| 6 | 验收（multialphav env 跑导入链 + CLI） | ✅ **已完成**（导入链全绿、CLI 正常、镜像就绪） |
+
+### 阶段 3 暂缓说明
+
+qlib 数据软链（`~/.qlib/qlib_data/cn_data → /home/zxh/qlib_data`）需 sudo（`~/.qlib/` owner=root），用户决定暂不处理。**影响**：代码里 `provider_uri` 硬编码 `~/.qlib/qlib_data/cn_data`（6 处 yaml + generate.py），首次跑 qlib 实验时会读到停在 2020-09-25 的过期数据。**恢复方式**：用户执行 `sudo mv /home/zxh/.qlib/qlib_data/cn_data{,.bak.2020} && sudo ln -s /home/zxh/qlib_data /home/zxh/.qlib/qlib_data/cn_data` 即可，备份 `cn_data.bak.2020` 可随时还原。
 
 ---
 

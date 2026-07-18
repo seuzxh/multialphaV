@@ -25,7 +25,7 @@
 | 2 | 创建 `.env`（以 CLAUDE.md §6.3 为准） | ✅ **已完成**（继承 0.8 三个 key，load_dotenv 验证通过） |
 | 3 | qlib 数据软链 `~/.qlib/qlib_data/cn_data → /home/zxh/qlib_data` | ⬜ 待执行 |
 | 4a | CodeGraph 索引重建 | ✅ **已完成**（230 文件/3635 节点） |
-| 4b | `.gitignore` 加 `.codegraph/` | ⬜ 待执行 |
+| 4b | `.gitignore` 加 `.codegraph/` | ✅ **已完成**（multialphaV 根仓库 .gitignore 第 11 行） |
 | 5 | git fork remote 配置 | ✅ **已完成**（origin→fork, upstream→microsoft） |
 | 6 | 验收（multialphav env 跑导入链 + CLI） | ⬜ 待执行（依赖 1-3） |
 

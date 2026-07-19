@@ -513,8 +513,13 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
   - `关联影响：无` 或 `已处理 X 处`（列出受影响模块）
   - `文档同步：无` 或 `已更新 §X.X`（列出同步的文档章节）
 - **文档同步**：行为变更必须同步更新受影响的 `docs/` 章节、`.trae/rules/`，**以及 CLAUDE.md 自身**（环境变量、路径、命令、API 等约定性内容）。
+- **持续沉淀**（强制）：与用户的讨论中一旦产生**有复用价值**的信息——包括但不限于：机制澄清（某模块/场景"为什么这样设计"）、设计决策（为什么选 A 不选 B）、架构事实（数据流 / 调用链 / 依赖关系）、踩坑结论、术语口径——**必须**当次整理并写入对应的 `docs/` 文档，**不得仅在对话中口头确认后丢弃**。
+  - 落点规则：场景/机制类 → [`docs/QLIB_SCENARIOS.md`](file:///home/zxh/projects/1.multialphaV/docs/QLIB_SCENARIOS.md)；协作/流程类 → `docs/COLLABORATION.md`；接口/配置类 → `API.md` / `ENV.md`；无对应文档时新建 `docs/<TOPIC>.md` 并在本文档清单登记。
+  - 写入要求：结论先行 + 证据链（`file:///` 绝对路径 + 行号链接，格式同「代码引用」条）+ 更新来源（"YYYY-MM-DD 讨论沉淀：〈一句话主题〉"），并在文末「更新来源」区累计追加。
+  - 整理时机：**当次任务收尾时即整理**，不积压、不延后；若一条信息不足以独立成节，先记入相关文档的「待整理」区，凑齐后合并。
 - **配套文档清单**（multialphaV 根仓库，行为变更时按需同步）：
   - [`docs/COLLABORATION.md`](file:///home/zxh/projects/1.multialphaV/docs/COLLABORATION.md)：**多人协作规范**（分支策略 / 环境一致性 / Key 管理 / trace 共享 / review 流程 / 共享资源变更协议）。管"人与人/人与资源"协作，本文件管"Agent 与代码"开发约束，两者冲突时本文件优先。
+  - [`docs/QLIB_SCENARIOS.md`](file:///home/zxh/projects/1.multialphaV/docs/QLIB_SCENARIOS.md)：**Qlib 四场景机制参考**（Factor / Model / Factor-from-Report / Quant 的训练机制与模型来源）。随讨论持续沉淀场景/机制类知识。
   - [`docs/reference/API.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/API.md)：平台接口参考（CLI / HTTP / Python 库 API / 配置接口）。
   - [`docs/reference/ENV.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/ENV.md)：环境配置说明（`.env` 全量字段、加载机制、死配置清单）。
   - [`docs/reference/REPOS.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/REPOS.md)：双仓库结构与 SSH 推送通道。

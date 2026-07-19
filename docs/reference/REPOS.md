@@ -12,7 +12,7 @@
 | 仓库 | URL | 可见性 | 职责 | 默认分支 |
 |---|---|---|---|---|
 | **multialphaV** | `git@github.com:seuzxh/multialphaV.git` | 私有 | 项目级文档与规范（CLAUDE.md / PLAN-*.md / .gitignore） | `main` |
-| **RD-Agent** | `git@github.com:seuzxh/RD-Agent.git` | 私有（fork） | RD-Agent 代码（裁剪后的 Qlib-only 分支） | `main`（fork 自上游，未改） |
+| **RD-Agent** | `git@github.com:seuzxh/RD-Agent.git` | 私有（fork） | RD-Agent 代码（裁剪后的 Qlib-only 分支） | `main`（已合并裁剪与修复，含 PR #1 + 直接 merge） |
 
 **关系图**：
 ```
@@ -83,19 +83,38 @@ multialphaV（根仓库，私有）        github.com:seuzxh/multialphaV
 
 | 分支 | HEAD | 说明 |
 |---|---|---|
-| `cut-non-qlib-scenarios` | `7cedd780` | **本项目工作分支**：裁剪非 Qlib 场景 + docker 同步 |
-| `main` | `4f9ecb00` | fork 自上游 microsoft/RD-Agent，**未修改**（保持与上游同步能力） |
+| `cut-non-qlib-scenarios` | `d027d9ca` | **本项目工作分支**：裁剪 + docker 同步 + 一系列 bug 修复（已全部 merge 到 main） |
+| `main` | `8e6413a9` | 项目主线：fork 自上游，**已通过 PR #1 + 直接 merge 合入 cut 全部 8 个 commit** |
+
+> **main 跟踪关系**：本地 main 已修正为跟踪 `origin/main`（之前曾错位跟踪 `upstream/main`，已于 2026-07-19 修正）。同步上游走 `git fetch upstream && git rebase upstream/main`（在 cut 分支上做，不在 main 上做）。
 
 ### `cut-non-qlib-scenarios` 分支 commit 历史
 
-本分支在 fork 点（`4f9ecb00`）基础上有 **2 个本项目 commit**：
+本分支在 fork 点（`4f9ecb00`）基础上有 **8 个本项目 commit**：
 
 | commit | 时间 | 说明 | 改动量 |
 |---|---|---|---|
+| `d027d9ca` | 2026-07-19 11:46 | fix(qlib): generate.py debug segment time range (2018-2019 → 2024-2025) | 1 文件 |
+| `7a3e98b1` | 2026-07-19 | revert: generate.py time slice back to upstream original (2008-12-29) | 1 文件 |
+| `889d26f1` | 2026-07-19 11:39 | fix(model): get_model_env extra_volumes override bug + cleanup .env.example | 2 文件 |
+| `6987d33d` | 2026-07-19 | fix(qlib): adapt generate.py time slices to 2020-2026 data range | 1 文件 |
+| `ebdc5c9b` | 2026-07-19 | revert: d542dcc3 Docker symlink loop fix (data moved to default path) | — |
+| `d542dcc3` | 2026-07-19 | fix(qlib): resolve Docker symlink loop in data mount | — |
 | `7cedd780` | 2026-07-18 16:11 | docker(qlib): sync 0.8 project's Dockerfile + lock + README | +268 / -8（4 文件） |
 | `8f60d6ea` | 2026-07-18 15:32 | cut: remove non-Qlib scenarios per CLAUDE.md §0/§10 | +26 / -61139（539 文件） |
 
-**`git describe --tags --always` 当前值**：`v0.8.0-30-g7cedd780`（fork 点 tag v0.8.0 + 30 个 commit + hash）
+### main 分支合并历史
+
+main 在 fork 点之后有 **2 个 merge commit**：
+
+| merge commit | 时间 | 说明 |
+|---|---|---|
+| `8e6413a9` | 2026-07-19 17:47 | 直接 merge cut-non-qlib-scenarios 到 main（`--no-ff`，补齐剩余 6 个 commit） |
+| `87050683` | 2026-07-18 16:29 | PR #1：首次 merge cut 到 main（当时只含 2 个 commit：裁剪 + docker 同步） |
+
+**`git describe --tags --always` 当前值**：
+- cut 分支：`v0.8.0-36-gd027d9ca`
+- main 分支：`v0.8.0-38-g8e6413a9`（比 cut 多 2 个 merge commit）
 - 用于同步升级对比：`git fetch upstream && git log --oneline $(git describe --tags --always)..upstream/main`
 
 ### 裁剪改动摘要（commit `8f60d6ea`）
@@ -140,20 +159,30 @@ multialphaV（根仓库，私有）        github.com:seuzxh/multialphaV
 cd /home/zxh/projects/1.multialphaV
 git push origin main
 
-# RD-Agent 仓库
+# RD-Agent 仓库 —— 注意：main 现在是项目主线，cut 已全部合入
 cd /home/zxh/projects/1.multialphaV/RD-Agent
-git push origin cut-non-qlib-scenarios
+git push origin main                    # 主线推送
+git push origin cut-non-qlib-scenarios  # 工作分支（可与 main 保持同步或独立继续开发）
 ```
 
 ### 同步上游更新（RD-Agent）
+
+> main 已含裁剪 commit，**禁止** `git merge upstream/main` 到 main（会让裁剪 entangled）。上游同步必须走 cut 分支 rebase：
 
 ```bash
 cd /home/zxh/projects/1.multialphaV/RD-Agent
 git fetch upstream
 git log --oneline $(git describe --tags --always)..upstream/main   # 看上游新增了什么
-# 决定是否 merge / rebase：
-# git merge upstream/main          # 保留裁剪 commit 历史
-# git rebase upstream/main          # 把裁剪 commit 重放到上游最新（历史更线性，但需 force push）
+
+# 在 cut 分支上 rebase（不在 main 上）
+git checkout cut-non-qlib-scenarios
+git rebase upstream/main
+# 处理裁剪冲突：上游对 data_science/kaggle/finetune/general_model/rl 的改动一律 drop；
+#               对 core/components/scenarios/qlib 的改动保留
+# rebase 成功后再 merge 回 main：
+git checkout main
+git merge --no-ff cut-non-qlib-scenarios
+git push origin main
 ```
 
 ### 查看远端同步状态
@@ -166,8 +195,11 @@ git rev-list --count HEAD..origin/<branch>   # 远端领先本地（应为 0）
 
 ### 回滚方案
 
-- **multialphaV 文档误改**：`git checkout <file>` 或 `git reset --hard ecc4dba`（最新 commit）
-- **RD-Agent 裁剪出问题**：`git checkout cut-non-qlib-scenarios`，可回退到 `8f60d6ea`（裁剪）或 `4f9ecb00`（fork 点，撤销所有裁剪）
+- **multialphaV 文档误改**：`git checkout <file>` 或 `git reset --hard <最新 commit>`
+- **RD-Agent main 出问题**：
+  - 撤销本次 merge（回到 PR #1 后状态）：`git reset --hard 87050683`（force push 需团队通告）
+  - 撤销所有 multialphaV 改动（回到 fork 点）：`git reset --hard 4f9ecb00`
+- **RD-Agent cut 分支出问题**：`git checkout cut-non-qlib-scenarios`，可回退到 `8f60d6ea`（裁剪）或 `4f9ecb00`（fork 点，撤销所有裁剪）
 
 ---
 
@@ -177,5 +209,5 @@ git rev-list --count HEAD..origin/<branch>   # 远端领先本地（应为 0）
 
 ---
 
-**版本**：v1.0（2026-07-18 初次记录，ssh 推送成功后）
+**版本**：v1.1（2026-07-19 更新：main 合入 cut 全部 8 commit，修正 main 跟踪错位）
 **维护策略**：每次有新的推送/分支/远程变更时更新本文档

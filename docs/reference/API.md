@@ -154,6 +154,27 @@ rdagent collect_info
 
 依次输出 OS / Python / Docker 容器 / rdagent 及依赖版本信息。实现：`rdagent/app/utils/info.py:collect_info`。
 
+#### `rdagent sota` — 查询 SOTA 实验产物
+
+```bash
+rdagent sota --log-path <log目录>
+rdagent sota --trace-name <trace名>
+rdagent sota --log-path <log目录> --output table
+rdagent sota --log-path <log目录> --output code
+```
+
+| 参数 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `--log-path` | `str` | None | log 目录路径（含 `__session__/`），如 `log/2026-07-19_03-38-42` |
+| `--trace-name` | `str` | None | trace 名称（扫描 `log/` 匹配） |
+| `--output` | `str` | json | 输出格式：`json` / `table` / `code` |
+
+两个路径参数二选一。`--log-path` 最可靠（直接指向 session）；`--trace-name` 会扫描 `log/` 匹配。
+
+输出包含：SOTA loop ID、假设、反馈决策、回测指标（IC/年化/回撤）、因子代码（factor.py）、模型代码（model.py）、workspace 路径。
+
+实现：`rdagent/app/cli.py:sota_cli` → `rdagent/log/sota_query.py:query_sota`。
+
 ---
 
 ## 2. HTTP API（Flask 服务）
@@ -257,6 +278,27 @@ rdagent collect_info
 | `/favicon.ico` | GET | 站点图标 |
 | `/<path:fn>` | GET | 静态文件（自动剥离 `static_path` 前缀） |
 | `/test` | GET | 调试：返回所有任务的 `{msgs, pointers}` 摘要 |
+| `/traces/<trace_name>/sota` | GET | 查询某次实验的 SOTA 产物（假设/指标/因子代码/模型代码） |
+
+#### `GET /traces/<trace_name>/sota` — SOTA 产物查询
+
+```bash
+# 通过 trace 名查询
+curl http://localhost:19899/traces/2026-07-19_03-38-42/sota
+
+# 通过 log_path 直接指定
+curl "http://localhost:19899/traces/any/sota?log_path=log/2026-07-19_03-38-42"
+```
+
+| 参数 | 位置 | 说明 |
+|---|---|---|
+| `trace_name` | URL path | trace 名或 log 目录名 |
+| `log_path` | query | 直接指定 log 目录（跳过 trace_name 扫描） |
+
+**响应**（200）：SOTA 实验的结构化信息（loop ID、假设、反馈、指标、因子/模型代码、workspace 路径）。
+**响应**（404）：session 不存在或无 SOTA 实验时返回 `{"error": "..."}`。
+
+实现：`rdagent/log/server/app.py:get_sota` → `rdagent/log/sota_query.py:query_sota`。
 
 ### 2.9 核心数据结构
 

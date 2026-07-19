@@ -1,0 +1,61 @@
+title: multialphaV
+description: 基于 RD-Agent + Qlib 的量化金融因子挖掘平台文档
+theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
+
+# 导航配置
+navigation:
+  - title: 指南
+    children:
+      - title: 环境搭建计划
+        url: /guide/PLAN-env-setup
+      - title: 四场景验证记录
+        url: /guide/VERIFICATION-log
+  - title: 参考资料
+    children:
+      - title: API 参考
+        url: /reference/API
+      - title: 环境配置说明
+        url: /reference/ENV
+      - title: 双仓库结构
+        url: /reference/REPOS
+  - title: 架构设计
+    children:
+      - title: 数据流与执行架构
+        url: /architecture/data-flow
+      - title: Qlib 四大场景
+        url: /QLIB_SCENARIOS
+  - title: 常见问题
+    children:
+      - title: FAQ
+        url: /faq/faq
+  - title: 规范
+    children:
+      - title: 多人协作规范
+        url: /COLLABORATION
+
+# Markdown 处理
+markdown: kramdown
+kramdown:
+  parse_block_html: true
+
+# 排除非文档文件
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+
+# 搜索功能
+search_enabled: true
+search:
+  heading_level: 3
+  previews: true
+  preview_words: 20
+
+# 页面辅助
+heading_anchors: true
+back_to_top: true
+back_to_top_text: "回到顶部"
+
+# 颜色主题
+color_scheme: light

@@ -238,7 +238,7 @@ BACKEND=rdagent.oai.backend.LiteLLMAPIBackend
 CHAT_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
 OPENAI_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
 CHAT_MODEL=openai/glm-5.2          # 全局 fallback（未命中 CHAT_MODEL_MAP 的调用走这里）
-CHAT_TEMPERATURE=0.5
+CHAT_TEMPERATURE=0.6
 CHAT_MAX_TOKENS=16384
 #CHAT_OPENAI_API_KEY=              # 方舟 Coding Plan api_key，勿入库
 #OPENAI_API_KEY=
@@ -247,14 +247,17 @@ CHAT_MAX_TOKENS=16384
 # step 取自 RDLoop：direct_exp_gen / coding / running / feedback / record（record 不调 LLM，不配）
 # 限制：所有 model 必须同 provider（方舟一个端点），因为后端不支持 per-call api_key/api_base。
 # JSON 必须单行；未命中 tag 走上面的全局 CHAT_MODEL。
-CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.5"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"0.2"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.3"},"feedback":{"model":"openai/glm-5.2","temperature":"0.4"}}
+# temperature 依据：各 model 厂商官方推荐（reasoning/agentic 模型在高温训练评测，低温会降表现）
+#   minimax-m3=0.7（M3 thinking 官方）/ kimi-k2.7-code=1.0（官方警告 agentic coding 禁低温）
+#   deepseek-v4-flash=0.0（DeepSeek 编码官方）/ glm-5.2=0.6（GLM-5.2 thinking 默认 1.0，略降防数值幻觉）
+CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.7"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"1.0"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.0"},"feedback":{"model":"openai/glm-5.2","temperature":"0.6"}}
 # 预留 A/B 对比：feedback 可换 deepseek-v4-pro，替换上行 feedback entry 的 model 即可。
 
-# ==================== Embedding（火山方舟 / 豆包） ====================
-# 注：实际 .env 当前用 litellm_proxy/doubao-embedding-vision 绕路（历史写法，chat 已切方舟后可择机简化为 openai/）。
+# ==================== Embedding（火山方舟 / 豆包，复用 chat 凭证） ====================
+# chat 已切方舟后 OPENAI_API_KEY/BASE 同指方舟，embedding 用 openai/ 前缀直接复用（与 chat 共一套凭证）。
+# litellm 后端只认 model 前缀：openai/ → OPENAI_API_KEY/BASE。
+# 已删旧绕路字段 EMBEDDING_OPENAI_* / LITELLM_PROXY_*（死配置或不再需要）。
 EMBEDDING_MODEL=openai/doubao-embedding-vision
-EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
-#EMBEDDING_OPENAI_API_KEY=   # 从 0.8 项目 .env 继承，勿入库
 
 # ==================== Qlib / 市场 ====================
 # 注：market 值（csi300）写死在 scenarios/qlib/experiment/{factor,model}_template/conf_*.yaml 的 YAML 锚点，

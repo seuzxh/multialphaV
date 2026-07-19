@@ -76,9 +76,8 @@ python -c "import sys, rdagent, pydantic; print(sys.version.split()[0], rdagent.
 
 **路径**：`/home/zxh/projects/1.multialphaV/RD-Agent/.env`
 
-**密钥来源**：从 `/home/zxh/quant_projects/rdagent/.env`（0.8 项目）继承 embedding key 的真实值；chat key 改用火山方舟 Coding Plan（2026-07-19 切换）：
-- `CHAT_OPENAI_API_KEY` / `OPENAI_API_KEY`（同值，指向火山方舟 Coding Plan，36 字符）
-- `EMBEDDING_OPENAI_API_KEY` / `LITELLM_PROXY_API_KEY`（火山方舟/豆包，36 字符）
+**密钥来源**：从 `/home/zxh/quant_projects/rdagent/.env`（0.8 项目）继承 key 的真实值；chat + embedding 均改用火山方舟 Coding Plan 统一凭证（2026-07-19 切换 + embedding 简化）：
+- `CHAT_OPENAI_API_KEY` / `OPENAI_API_KEY`（同值，指向火山方舟 Coding Plan，36 字符；embedding 复用此 key，不再单独配置）
 
 **完整内容**（非密钥项见 CLAUDE.md §6.3 模板）：
 ```dotenv
@@ -87,19 +86,16 @@ BACKEND=rdagent.oai.backend.LiteLLMAPIBackend
 CHAT_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
 OPENAI_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
 CHAT_MODEL=openai/glm-5.2          # 全局 fallback；保留 openai/ LiteLLM 前缀，勿去
-CHAT_TEMPERATURE=0.5
+CHAT_TEMPERATURE=0.6
 CHAT_MAX_TOKENS=16384
 CHAT_OPENAI_API_KEY=<方舟 Coding Plan key>
 OPENAI_API_KEY=<同上>
 
-# per-step 路由（官方 chat_model_map 机制）
-CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.5"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"0.2"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.3"},"feedback":{"model":"openai/glm-5.2","temperature":"0.4"}}
+# per-step 路由（官方 chat_model_map 机制）+ temperature 用厂商官方推荐值
+CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.7"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"1.0"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.0"},"feedback":{"model":"openai/glm-5.2","temperature":"0.6"}}
 
-EMBEDDING_MODEL=litellm_proxy/doubao-embedding-vision
-EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
-LITELLM_PROXY_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
-EMBEDDING_OPENAI_API_KEY=<从 0.8 .env 继承>
-LITELLM_PROXY_API_KEY=<同上>
+# Embedding 复用 chat 的方舟凭证（openai/ 前缀 → OPENAI_API_KEY/BASE，在 LLM 段已配）
+EMBEDDING_MODEL=openai/doubao-embedding-vision
 
 # 注：RDAGENT_MARKET 已删除（代码零引用，详见 ENV.md §5.1）
 

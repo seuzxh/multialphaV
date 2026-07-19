@@ -51,9 +51,13 @@ test:  2024-07-01 ~ 2026-07-17
 
 ## Q6: 为什么 embedding 报"模型不存在"？
 
-litellm 的 `openai/` 前缀会让它用 `OPENAI_API_BASE`（智谱），但 embedding 模型在火山方舟。修复：改为 `litellm_proxy/` 前缀 + 设置 `LITELLM_PROXY_API_KEY/BASE`。
+根因:litellm 按 **model 前缀**路由凭证。`openai/xxx` 前缀会让它用 `OPENAI_API_KEY`/`OPENAI_API_BASE`,若这套凭证指向的 provider 没有该 embedding 模型(比如 chat 凭证指 OpenAI,embedding 想调 doubao),就报"模型不存在"。
 
-详见 [数据流架构](../architecture/data-flow.md) §4 LLM 调用架构。
+两种修复方式:
+- **方式 A(chat + embedding 同 provider,推荐)**:chat 和 embedding 用同一个 provider 的凭证(本项目现状:均在火山方舟),直接 `EMBEDDING_MODEL=openai/doubao-embedding-vision` 复用 `OPENAI_API_KEY/BASE` 即可。
+- **方式 B(chat + embedding 跨 provider)**:改 `litellm_proxy/` 前缀 + 单独设 `LITELLM_PROXY_API_KEY/BASE` 指向 embedding 的 provider。
+
+详见 [数据流架构](../architecture/data-flow.md) §4 LLM 调用架构的"历史教训"段。
 
 ## Q7: Docker 报 "Symlink loop" 怎么解决？
 

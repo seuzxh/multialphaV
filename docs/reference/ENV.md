@@ -99,31 +99,32 @@ BACKEND=rdagent.oai.backend.LiteLLMAPIBackend
 CHAT_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
 OPENAI_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
 CHAT_MODEL=openai/glm-5.2
-CHAT_TEMPERATURE=0.5
+CHAT_TEMPERATURE=0.6
 CHAT_MAX_TOKENS=16384
 CHAT_OPENAI_API_KEY=<方舟 Coding Plan key>
 OPENAI_API_KEY=<方舟 Coding Plan key>
 
 # per-step 路由(官方 chat_model_map 机制,命中 logger._tag 子串 Loop_{li}.{step})
-CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.5"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"0.2"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.3"},"feedback":{"model":"openai/glm-5.2","temperature":"0.4"}}
+# temperature 依据厂商官方推荐(reasoning/agentic 模型高温训练评测):
+#   minimax-m3=0.7(M3 thinking)/kimi-k2.7-code=1.0(官方禁低温)/deepseek-v4-flash=0.0(编码)/glm-5.2=0.6
+CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.7"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"1.0"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.0"},"feedback":{"model":"openai/glm-5.2","temperature":"0.6"}}
 ```
 - **作用**：把 chat LLM 切到**火山方舟 Coding Plan**（统一端点，多 model 聚合）。`openai/` 前缀是 LiteLLM 的 OpenAI 兼容协议标记。
 - **归属**：均属 `LLMSettings`（[§3.2](#32-llm-后端配置llmsettings无前缀)）。
   - `CHAT_OPENAI_BASE_URL` / `CHAT_OPENAI_API_KEY`：**仅用于 chat** 的专用覆盖（优先级高于通用 `OPENAI_*`）
   - `OPENAI_API_BASE` / `OPENAI_API_KEY`：通用 OpenAI 兼容端点（chat 和 embedding 的回退）；本项目两者同指方舟
   - `CHAT_MODEL`：全局 chat 模型名（未命中 `CHAT_MODEL_MAP` 的调用走这里）
-  - `CHAT_TEMPERATURE`：采样温度（默认 0.5）
+  - `CHAT_TEMPERATURE`：全局 fallback 采样温度（0.6，对齐 GLM-5.2 thinking 推荐）
   - `CHAT_MAX_TOKENS`：单次响应最大 token
-  - `CHAT_MODEL_MAP`：per-step 模型路由，详见 [§3.2](#32-llm-后端配置llmsettings无前缀) 的 `CHAT_MODEL_MAP` 行
+  - `CHAT_MODEL_MAP`：per-step 模型路由 + 各 model 厂商推荐 temperature，详见 [§3.2](#32-llm-后端配置llmsettings无前缀)
 
 ```dotenv
-EMBEDDING_MODEL=litellm_proxy/doubao-embedding-vision
-EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
-LITELLM_PROXY_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
-LITELLM_PROXY_API_KEY=<方舟 key>
+EMBEDDING_MODEL=openai/doubao-embedding-vision
+# 复用 OPENAI_API_KEY/BASE（与 chat 同指方舟，在 LLM 段已配）
 ```
-- **作用**：embedding 走**火山方舟豆包**。实际 `.env` 用 `litellm_proxy/` 前缀绕路（历史写法；chat 已切方舟后理论上可简化为 `openai/`，待验证连通性后择机简化）。
-- **归属**：`LLMSettings.embedding_*`（[§3.2](#32-llm-后端配置llmsettings无前缀)）。`litellm_proxy/` 前缀让 litellm 读 `LITELLM_PROXY_API_KEY/BASE`。
+- **作用**：embedding 走**火山方舟豆包**，与 chat 同 provider、同凭证。chat 切方舟后用 `openai/` 前缀即可直接复用 `OPENAI_API_KEY/BASE`，不再需要 `litellm_proxy/` 绕路。
+- **归属**：`LLMSettings.embedding_*`（[§3.2](#32-llm-后端配置llmsettings无前缀)）。litellm 后端只认 model 前缀路由：`openai/` → `OPENAI_API_KEY/BASE`。
+- **已删字段**：`EMBEDDING_OPENAI_API_KEY/BASE_URL`（litellm 后端不消费，仅废弃 `deprec.py` 用，[§3.2](#32-llm-后端配置llmsettings无前缀) 标注为死字段）；`LITELLM_PROXY_API_KEY/BASE`（`litellm_proxy/` 前缀专用，不再需要）。
 
 ```dotenv
 # 注：market 值（csi300）写死在 scenarios/qlib/experiment/{factor,model}_template/conf_*.yaml 的 YAML 锚点，
@@ -231,8 +232,8 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 
 | 字段 | 默认 | 决定什么 |
 |---|---|---|
-| `EMBEDDING_OPENAI_API_KEY` | `""` | embedding 专用 key（优先于 `OPENAI_API_KEY`） |
-| `EMBEDDING_OPENAI_BASE_URL` | `""` | embedding 专用 base url |
+| `EMBEDDING_OPENAI_API_KEY` | `""` | embedding 专用 key（⚠️ **死字段**：`LiteLLMAPIBackend` 不消费，仅废弃 `deprec.py` 用；litellm 后端靠 model 前缀路由，`openai/` 读 `OPENAI_API_KEY`） |
+| `EMBEDDING_OPENAI_BASE_URL` | `""` | embedding 专用 base url（⚠️ **死字段**，同上） |
 | `EMBEDDING_AZURE_API_BASE` | `""` | Azure embedding 端点 |
 | `EMBEDDING_AZURE_API_VERSION` | `""` | Azure embedding 版本 |
 | `EMBEDDING_USE_AZURE` | `False` | embedding 走 Azure |
@@ -580,14 +581,12 @@ CHAT_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
 OPENAI_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
 CHAT_OPENAI_API_KEY=<方舟 Coding Plan key>
 OPENAI_API_KEY=<方舟 Coding Plan key>
-# per-step 路由（官方 chat_model_map 机制）
-CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.5"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"0.2"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.3"},"feedback":{"model":"openai/glm-5.2","temperature":"0.4"}}
+# per-step 路由（官方 chat_model_map 机制）+ temperature 用厂商官方推荐值
+CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.7"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"1.0"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.0"},"feedback":{"model":"openai/glm-5.2","temperature":"0.6"}}
 
-# ====== 必需：Embedding（方舟豆包，litellm_proxy/ 绕路写法） ======
-EMBEDDING_MODEL=litellm_proxy/doubao-embedding-vision
-EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
-LITELLM_PROXY_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
-LITELLM_PROXY_API_KEY=<方舟 key>
+# ====== 必需：Embedding（方舟豆包，复用 chat 的方舟凭证） ======
+EMBEDDING_MODEL=openai/doubao-embedding-vision
+# 复用 OPENAI_API_KEY/BASE（与 chat 同指方舟，在 LLM 段已配，无需另设）
 
 # ====== 必需：Model 训练执行环境 ======
 MODEL_CoSTEER_ENV_TYPE=docker
@@ -595,7 +594,7 @@ QLIB_DOCKER_IMAGE=local_qlib:v2.0
 QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 
 # ====== 可选：调用参数调优 ======
-CHAT_TEMPERATURE=0.5
+CHAT_TEMPERATURE=0.6
 CHAT_MAX_TOKENS=16384
 
 # ====== 可选：训练/验证/测试日期（默认 2008-01-01 ~ 2020-08-01） ======

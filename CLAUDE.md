@@ -202,7 +202,7 @@ Claude Code 环境内已挂载 `mcp_context7` MCP 服务，提供：
 | 资源 | 路径 / 值 | 说明 |
 |---|---|---|
 | Qlib 数据 | `/home/zxh/qlib_data`（最新到 2026-07-17，owner=zxh） | 两项目共享，格式见 `qlib_data_format.md`；rdagent 代码硬编码 `~/.qlib/qlib_data/cn_data`，通过软链指向此目录（见下方"Qlib 数据软链"） |
-| Qlib 数据软链 | `~/.qlib/qlib_data/cn_data → /home/zxh/qlib_data` | owner=zxh（2026-07-18 重建，删除了 root 拥有的旧 `~/.qlib/`）；让代码硬编码路径自动读到最新数据，零代码改动；旧数据（停在 2020-09-25）已随 `~/.qlib/` 删除 |
+| Qlib 数据软链 | `~/.qlib/qlib_data/cn_data → /home/zxh/qlib_data` | owner=zxh（2026-07-18 重建）；**宿主层面**让代码硬编码路径读到最新数据（conda 模式）；**Docker 层面**通过 `QlibDockerConf.extra_volumes` 直接挂 `/home/zxh/qlib_data → /root/.qlib/qlib_data/cn_data`（ro），不走宿主软链，避免三链死循环（详见 [docker/README.md](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/scenarios/qlib/docker/README.md) 数据挂载章节） |
 | conda base | `/home/zxh/miniconda3` | 仅用于基础 Python 解释器 |
 | Factor CoSTEER 解释器 | `/home/zxh/miniconda3/envs/rdagent/bin/python` | CoSTEER 子进程用，**保持指向 0.8 env** 以避免重复装包 |
 | Docker Qlib 镜像 | `local_qlib:v2.0` | 已构建，`QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False` 跳过重建 |

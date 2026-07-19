@@ -101,22 +101,30 @@ generate.py 产出
 
 ## 4. LLM 调用架构
 
-### 双服务商配置
+### 单服务商（火山方舟 Coding Plan）+ per-step 多 model
 
-| 功能 | 服务商 | 模型 | 环境变量前缀 |
+chat 与 embedding 统一走火山方舟 Coding Plan 端点（`https://ark.cn-beijing.volces.com/api/coding/v3`），chat 侧按 RDLoop step 路由到不同 model：
+
+| 功能 / step | 服务商 | 模型 | 前缀/环境变量 |
 |---|---|---|---|
-| Chat（因子/模型假设生成） | 智谱 AI | `openai/glm-5.2` | `OPENAI_API_BASE`（bigmodel.cn） |
-| Embedding（知识库向量检索） | 火山方舟 | `litellm_proxy/doubao-embedding-vision` | `LITELLM_PROXY_API_BASE`（volces.com） |
+| Chat fallback（未命中 + record） | 火山方舟 | `openai/glm-5.2` | `openai/` → `OPENAI_API_KEY`+`OPENAI_API_BASE` |
+| Chat `direct_exp_gen` | 火山方舟 | `openai/minimax-m3` | 同上（经 `CHAT_MODEL_MAP` 路由） |
+| Chat `coding` | 火山方舟 | `openai/kimi-k2.7-code` | 同上 |
+| Chat `running` | 火山方舟 | `openai/deepseek-v4-flash` | 同上 |
+| Chat `feedback` | 火山方舟 | `openai/glm-5.2` | 同上 |
+| Embedding（知识库向量检索） | 火山方舟 | `litellm_proxy/doubao-embedding-vision` | `litellm_proxy/` → `LITELLM_PROXY_API_KEY`+`LITELLM_PROXY_API_BASE` |
+
+> **限制**：litellm 后端不传 per-call `api_key`/`api_base`，故 `CHAT_MODEL_MAP` 里所有 model 必须同 provider（方舟一个端点）。要跨 provider 需扩展后端。
 
 ### litellm 前缀路由机制
 
 litellm 根据模型名前缀决定用哪个 `api_key`/`api_base`：
-- `openai/xxx` → `OPENAI_API_KEY` + `OPENAI_API_BASE`
-- `litellm_proxy/xxx` → `LITELLM_PROXY_API_KEY` + `LITELLM_PROXY_API_BASE`
+- `openai/xxx` → `OPENAI_API_KEY` + `OPENAI_API_BASE`（chat 全部走这里）
+- `litellm_proxy/xxx` → `LITELLM_PROXY_API_KEY` + `LITELLM_PROXY_API_BASE`（embedding 走这里）
 
 ### 历史教训：Embedding 路由错误（已解决）
 
-之前 `EMBEDDING_MODEL=openai/doubao-embedding-vision` 导致 litellm 用智谱 base 调 embedding（智谱没有 doubao → "模型不存在"）。修复为 `litellm_proxy/` 前缀。
+之前 `EMBEDDING_MODEL=openai/doubao-embedding-vision` 导致 litellm 用 chat 的 base 调 embedding（当时 chat 在智谱，智谱没有 doubao → "模型不存在"）。修复为 `litellm_proxy/` 前缀。chat 切到方舟后，`OPENAI_API_BASE` 与 embedding 同指方舟，该绕路理论上可简化为 `openai/`，待验证连通性后择机处理。
 
 ## 5. CoSTEER 因子迭代机制
 

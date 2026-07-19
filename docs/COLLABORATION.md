@@ -303,8 +303,8 @@ docker run --rm local_qlib:v2.0 python -c "import qlib;print(qlib.__version__)" 
 
 | Key 类型 | 用途 | 默认提供商（CLAUDE.md §6.3） | 获取方式 |
 |---|---|---|---|
-| Chat LLM Key | 因子/模型假设生成、CoSTEER 编码、反馈 | 智谱 AI GLM-5.2 | 各成员去 https://open.bigmodel.cn 注册 |
-| Embedding Key | 知识库向量化、相似因子检索 | 火山方舟豆包 | 各成员去 https://www.volcengine.com/product/ark 开通 |
+| Chat LLM Key | 因子/模型假设生成、CoSTEER 编码、反馈 | 火山方舟 Coding Plan（多 model：glm-5.2 / minimax-m3 / kimi-k2.7-code / deepseek-v4-flash） | 各成员去 https://www.volcengine.com/product/ark 开通 Coding Plan |
+| Embedding Key | 知识库向量化、相似因子检索 | 火山方舟豆包（与 chat 同账号同 key） | 同上，Coding Plan 含 embedding 额度 |
 
 ### 3.2 `.env` 分发流程
 

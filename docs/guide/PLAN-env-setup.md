@@ -76,27 +76,32 @@ python -c "import sys, rdagent, pydantic; print(sys.version.split()[0], rdagent.
 
 **路径**：`/home/zxh/projects/1.multialphaV/RD-Agent/.env`
 
-**密钥来源**：从 `/home/zxh/quant_projects/rdagent/.env`（0.8 项目）继承 3 个 key 的真实值：
-- `CHAT_OPENAI_API_KEY` / `OPENAI_API_KEY`（同值，指向智谱 AI，49 字符）
-- `EMBEDDING_OPENAI_API_KEY`（火山方舟/豆包，36 字符）
+**密钥来源**：从 `/home/zxh/quant_projects/rdagent/.env`（0.8 项目）继承 embedding key 的真实值；chat key 改用火山方舟 Coding Plan（2026-07-19 切换）：
+- `CHAT_OPENAI_API_KEY` / `OPENAI_API_KEY`（同值，指向火山方舟 Coding Plan，36 字符）
+- `EMBEDDING_OPENAI_API_KEY` / `LITELLM_PROXY_API_KEY`（火山方舟/豆包，36 字符）
 
 **完整内容**（非密钥项见 CLAUDE.md §6.3 模板）：
 ```dotenv
 BACKEND=rdagent.oai.backend.LiteLLMAPIBackend
 
-CHAT_OPENAI_BASE_URL=https://open.bigmodel.cn/api/coding/paas/v4
-OPENAI_API_BASE=https://open.bigmodel.cn/api/coding/paas/v4
-CHAT_MODEL=openai/glm-5.2          # 保留 openai/ LiteLLM 前缀，勿去
+CHAT_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
+OPENAI_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
+CHAT_MODEL=openai/glm-5.2          # 全局 fallback；保留 openai/ LiteLLM 前缀，勿去
 CHAT_TEMPERATURE=0.5
 CHAT_MAX_TOKENS=16384
-CHAT_OPENAI_API_KEY=<从 0.8 .env 继承>
+CHAT_OPENAI_API_KEY=<方舟 Coding Plan key>
 OPENAI_API_KEY=<同上>
 
-EMBEDDING_MODEL=openai/doubao-embedding-vision
-EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
-EMBEDDING_OPENAI_API_KEY=<从 0.8 .env 继承>
+# per-step 路由（官方 chat_model_map 机制）
+CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.5"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"0.2"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.3"},"feedback":{"model":"openai/glm-5.2","temperature":"0.4"}}
 
-RDAGENT_MARKET=csi300
+EMBEDDING_MODEL=litellm_proxy/doubao-embedding-vision
+EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
+LITELLM_PROXY_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
+EMBEDDING_OPENAI_API_KEY=<从 0.8 .env 继承>
+LITELLM_PROXY_API_KEY=<同上>
+
+# 注：RDAGENT_MARKET 已删除（代码零引用，详见 ENV.md §5.1）
 
 FACTOR_CoSTEER_PYTHON_BIN=/home/zxh/miniconda3/envs/rdagent/bin/python  # 有意指向 0.8 env（§6.1 红线，勿改）
 
@@ -113,7 +118,7 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 ```bash
 conda activate multialphav
 python -c "from rdagent.oai.llm_conf import LLM_SETTINGS; print(LLM_SETTINGS.backend, LLM_SETTINGS.chat_model, LLM_SETTINGS.chat_openai_base_url)"
-# 预期: rdagent.oai.backend.LiteLLMAPIBackend openai/glm-5.2 https://open.bigmodel.cn/api/coding/paas/v4
+# 预期: rdagent.oai.backend.LiteLLMAPIBackend openai/glm-5.2 https://ark.cn-beijing.volces.com/api/coding/v3
 ```
 
 **回滚**：`rm .env`。

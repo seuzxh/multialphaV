@@ -232,16 +232,26 @@ pip install <multialphaV 扩展依赖>  # 按需增量
 # ==================== 后端 ====================
 BACKEND=rdagent.oai.backend.LiteLLMAPIBackend
 
-# ==================== LLM（智谱 AI / GLM） ====================
-CHAT_OPENAI_BASE_URL=https://open.bigmodel.cn/api/coding/paas/v4
-OPENAI_API_BASE=https://open.bigmodel.cn/api/coding/paas/v4
-CHAT_MODEL=openai/glm-5.2
+# ==================== LLM（火山方舟 Coding Plan，统一端点 + 多 model 路由） ====================
+# litellm 后端不传 api_key/api_base，靠 openai/ 前缀让 litellm 读 OPENAI_API_KEY/BASE。
+# chat 与 embedding 复用同一个方舟 Coding Plan 端点；chat 切方舟后 key/base 与 embedding 一致。
+CHAT_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
+OPENAI_API_BASE=https://ark.cn-beijing.volces.com/api/coding/v3
+CHAT_MODEL=openai/glm-5.2          # 全局 fallback（未命中 CHAT_MODEL_MAP 的调用走这里）
 CHAT_TEMPERATURE=0.5
 CHAT_MAX_TOKENS=16384
-#CHAT_OPENAI_API_KEY=        # 从 0.8 项目 .env 继承，勿入库
+#CHAT_OPENAI_API_KEY=              # 方舟 Coding Plan api_key，勿入库
 #OPENAI_API_KEY=
 
+# per-step 路由（官方 chat_model_map 机制；命中 logger._tag 子串，tag 格式 Loop_{li}.{step}）
+# step 取自 RDLoop：direct_exp_gen / coding / running / feedback / record（record 不调 LLM，不配）
+# 限制：所有 model 必须同 provider（方舟一个端点），因为后端不支持 per-call api_key/api_base。
+# JSON 必须单行；未命中 tag 走上面的全局 CHAT_MODEL。
+CHAT_MODEL_MAP={"direct_exp_gen":{"model":"openai/minimax-m3","temperature":"0.5"},"coding":{"model":"openai/kimi-k2.7-code","temperature":"0.2"},"running":{"model":"openai/deepseek-v4-flash","temperature":"0.3"},"feedback":{"model":"openai/glm-5.2","temperature":"0.4"}}
+# 预留 A/B 对比：feedback 可换 deepseek-v4-pro，替换上行 feedback entry 的 model 即可。
+
 # ==================== Embedding（火山方舟 / 豆包） ====================
+# 注：实际 .env 当前用 litellm_proxy/doubao-embedding-vision 绕路（历史写法，chat 已切方舟后可择机简化为 openai/）。
 EMBEDDING_MODEL=openai/doubao-embedding-vision
 EMBEDDING_OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/coding/v3
 #EMBEDDING_OPENAI_API_KEY=   # 从 0.8 项目 .env 继承，勿入库

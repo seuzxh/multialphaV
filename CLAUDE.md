@@ -503,6 +503,11 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
   - `关联影响：无` 或 `已处理 X 处`（列出受影响模块）
   - `文档同步：无` 或 `已更新 §X.X`（列出同步的文档章节）
 - **文档同步**：行为变更必须同步更新受影响的 `docs/` 章节、`.trae/rules/`，**以及 CLAUDE.md 自身**（环境变量、路径、命令、API 等约定性内容）。
+- **配套文档清单**（multialphaV 根仓库，行为变更时按需同步）：
+  - [`docs/COLLABORATION.md`](file:///home/zxh/projects/1.multialphaV/docs/COLLABORATION.md)：**多人协作规范**（分支策略 / 环境一致性 / Key 管理 / trace 共享 / review 流程 / 共享资源变更协议）。管"人与人/人与资源"协作，本文件管"Agent 与代码"开发约束，两者冲突时本文件优先。
+  - [`docs/reference/API.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/API.md)：平台接口参考（CLI / HTTP / Python 库 API / 配置接口）。
+  - [`docs/reference/ENV.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/ENV.md)：环境配置说明（`.env` 全量字段、加载机制、死配置清单）。
+  - [`docs/reference/REPOS.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/REPOS.md)：双仓库结构与 SSH 推送通道。
 - **Git 操作**：不主动 commit / push；如需提交先确认无敏感信息泄露。
 
 ---

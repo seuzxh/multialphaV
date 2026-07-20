@@ -44,6 +44,7 @@
 | 切换 Qlib 训练/验证/测试日期区间 | `QLIB_FACTOR_TRAIN_START` 等（按场景前缀） | [3.3](#33-qlib-rd-循环配置) |
 | 换因子/模型/全流水线的某个组件类 | `QLIB_FACTOR_CODER` 等 | [3.3](#33-qlib-rd-循环配置) |
 | 调 CoSTEER 演化轮数 | `QLIB_FACTOR_EVOLVING_N`（循环级）或 `CoSTEER_MAX_LOOP`（子系统级） | [3.3](#33-qlib-rd-循环配置) / [3.4](#34-costeer-子系统配置) |
+| 切换 Factor 验证模型 | `QLIB_FACTOR_MODEL_SELECTOR`（`lgbm`/`linear`/`xgboost`/`catboost`） | [3.3](#33-qlib-rd-循环配置) |
 | Model 训练用 Docker 还是 Conda | `MODEL_CoSTEER_ENV_TYPE` | [3.4](#34-costeer-子系统配置) |
 | 换 Qlib Docker 镜像 | `QLIB_DOCKER_IMAGE` | [3.5](#35-docker--执行环境配置) |
 | 跳过 Docker 镜像构建（用现有镜像） | `QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False` | [3.5](#35-docker--执行环境配置) |
@@ -319,6 +320,21 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 | `<X>TEST_END` | `2020-08-01` | 测试集结束 |
 
 例：`QLIB_FACTOR_TEST_END=2026-07-17`、`QLIB_QUANT_VALID_START=2020-01-01`。这些值最终注入 Qlib 模板的 `conf_*.yaml`，决定回测时间窗。
+
+#### Factor 验证模型选择器（`QLIB_FACTOR_MODEL_SELECTOR`）
+
+仅 `FactorBasePropSetting`（即 `fin_factor` / `fin_factor_report` 循环）有此字段，决定因子验证时用哪个 qlib 内置模型。通过 Jinja 条件块切换 `conf_baseline.yaml` / `conf_combined_factors.yaml` 的 `task.model` 段（由 `qrun` 在容器内渲染）。
+
+| 值 | 模型 | module_path | 特点 |
+|---|---|---|---|
+| `lgbm`（默认） | `LGBModel` | `qlib.contrib.model.gbdt` | LightGBM 梯度提升，与历史行为一致 |
+| `linear` | `LinearModel` | `qlib.contrib.model.linear` | 闭式 OLS，毫秒~秒级，纯 CPU，最快基线 |
+| `xgboost` | `XGBModel` | `qlib.contrib.model.xgboost` | XGBoost 梯度提升树 |
+| `catboost` | `CatBoostModel` | `qlib.contrib.model.catboost_model` | CatBoost 梯度提升树（自动 GPU/CPU；需 `pip install catboost`） |
+
+> **副作用提示**：`QlibFactorRunner` 在 Factor / Factor-from-Report / Quant 三个场景间共用，且 `develop()` 内硬编码读 `FactorBasePropSetting()`。因此设置 `QLIB_FACTOR_MODEL_SELECTOR` 也会影响 Quant 循环的因子评估分支（默认 `lgbm` 不改变 Quant 现有行为；仅当显式设置非 lgbm 值时生效）。Quant 的 SOTA 模型复用分支（`conf_combined_factors_sota_model.yaml`）不受此字段影响。
+>
+> **缓存**：因子实验的 pickle 缓存 key 已纳入 `model_selector`（`QlibFactorRunner._develop_cache_key`），同一组因子用不同 selector 会生成不同缓存文件，互不干扰。
 
 #### Quant 独有字段
 

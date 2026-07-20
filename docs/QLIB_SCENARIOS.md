@@ -86,8 +86,18 @@ Factor 场景有**三个** YAML 模板，由
 
 要点：
 - 默认评估器是 **LightGBM**（`qlib.contrib.model.gbdt.LGBModel`），用户一般不去换。
+- **多模型选择器**（`model_selector`，2026-07 新增）：`conf_baseline.yaml` 和 `conf_combined_factors.yaml` 的 `task.model` 段已用 Jinja `{% if model_selector == ... %}` 条件块参数化，支持 4 种 qlib 内置模型——通过环境变量 `QLIB_FACTOR_MODEL_SELECTOR` 切换（默认 `lgbm`）：
+
+  | selector | class | 特点 |
+  |---|---|---|
+  | `lgbm`（默认） | `LGBModel` | LightGBM，与历史行为一致 |
+  | `linear` | `LinearModel` | 闭式 OLS，毫秒级，最快基线 |
+  | `xgboost` | `XGBModel` | XGBoost 梯度提升树 |
+  | `catboost` | `CatBoostModel` | CatBoost（自动 GPU/CPU） |
+
+  配置见 [`conf.py: FactorBasePropSetting.model_selector`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/app/qlib_rd_loop/conf.py#L94)；env 注入见 [`factor_runner.py: env_to_use`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/scenarios/qlib/developer/factor_runner.py#L100)。`FactorFromReportPropSetting` 自动继承；**副作用**：Quant 场景共用 `QlibFactorRunner` 也会受影响（默认 lgbm 不变行为）。pickle 缓存 key 已纳入 selector（[`_develop_cache_key`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/scenarios/qlib/developer/factor_runner.py#L64)），同因子不同 selector 互不干扰。
 - **特例**：当历史 trace 里跑出过被采纳的 SOTA 模型实验（`exp.based_experiments` 含 `QlibModelExperiment`），Factor runner 会**复用那份模型代码**（`model.py`），切到 `GeneralPTNN` + `pt_model_uri: "model.model_cls"` 来跑组合因子评估——见
-  [`factor_runner.py#L132-L166`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/scenarios/qlib/developer/factor_runner.py#L132-L166)。
+  [`factor_runner.py#L132-L166`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/scenarios/qlib/developer/factor_runner.py#L132-L166)。此分支不受 `model_selector` 影响。
 - prompt 文档（[`prompts.yaml: qlib_factor_simulator`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/scenarios/qlib/experiment/prompts.yaml#L97)）给 LLM 的示例是：「train a model like **LightGBM, CatBoost, LSTM** or simple PyTorch model」——只是文字描述，不是代码层面的可选清单。
 
 ### 3.2 Model / Quant 场景（②④）—— 模型是 PyTorch，由 agent 生成
@@ -213,12 +223,17 @@ exp.based_experiments = [t[0] for t in trace.hist
 | **GeneralPTNN** | Qlib 的通用 PyTorch 模型包装器，网络结构通过 `pt_model_uri` 注入 |
 | **model_cls** | `model.py` 里约定的变量名，指向 LLM 生成的 `torch.nn.Module` 子类 |
 | **LGBModel** | Qlib 自带的 LightGBM 模型实现（`qlib.contrib.model.gbdt`），Factor 场景的默认评估器 |
+| **LinearModel** | Qlib 自带的线性模型（`qlib.contrib.model.linear`），支持 ols/ridge/lasso/nnls 闭式解，Factor 场景可选的最快验证模型 |
+| **XGBModel / CatBoostModel** | Qlib 自带的 XGBoost / CatBoost 梯度提升树实现，Factor 场景可选的树模型对照 |
+| **model_selector** | Factor / Factor-from-Report 场景的模型选择器配置（`QLIB_FACTOR_MODEL_SELECTOR`，默认 `lgbm`），通过 Jinja 条件块切换 `task.model`。详见 §3.1 |
 | **based_experiments** | 实验对象携带的"历史已采纳实验"列表，是迭代进化的上下文基础 |
 | **SOTA 模型** | trace 中被 `decision=True` 采纳的最优模型实验，可被 Factor 场景复用 |
 
 ---
 
-**版本**：v1.0（2026-07-19）
+**版本**：v1.1（2026-07-20）
 **适用目录**：`/home/zxh/projects/1.multialphaV`（根仓库，本文档所在地）+ `/home/zxh/projects/1.multialphaV/RD-Agent`（代码仓库）
-**配套文档**：[CLAUDE.md](file:///home/zxh/projects/1.multialphaV/CLAUDE.md)（开发行为约束）、[docs/COLLABORATION.md](file:///home/zxh/projects/1.multialphaV/docs/COLLABORATION.md)（多人协作规范）
-**更新来源**：2026-07-19 团队讨论「四 qlib 场景是否都训练模型 / Model 场景模型来源」结论沉淀
+**配套文档**：[CLAUDE.md](file:///home/zxh/projects/1.multialphaV/CLAUDE.md)（开发行为约束）、[docs/COLLABORATION.md](file:///home/zxh/projects/1.multialphaV/docs/COLLABORATION.md)（多人协作规范）、[docs/reference/ENV.md](file:///home/zxh/projects/1.multialphaV/docs/reference/ENV.md)（配置项参考）
+**更新来源**：
+- 2026-07-19 团队讨论「四 qlib 场景是否都训练模型 / Model 场景模型来源」结论沉淀
+- 2026-07-20 实现沉淀：Factor 场景多模型选择器 `model_selector`（4 取值 lgbm/linear/xgboost/catboost，Jinja 参数化模板，cache key 纳入 selector；commit `d0348280`）

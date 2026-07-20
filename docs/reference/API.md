@@ -192,10 +192,11 @@ rdagent sota --log-path <log目录> --output code
 | 字段 | 必填 | 说明 |
 |---|---|---|
 | `scenario` | ✅ | 场景名，枚举值见下表 |
-| `files` | ✅ | 上传的文件列表（多文件） |
+| `files` | ❌ | 上传的文件列表（多文件，pdf 模式传研报，optimize 模式传 .py 因子代码） |
 | `competition` | ❌ | 比赛名（仅 Data Science 用） |
 | `loops` | ❌ | 循环数（转 int） |
 | `all_duration` | ❌ | 时长（小时数，自动补 `h` 后缀） |
+| `description` | ❌ | 自然语言挖掘目标（fin_factor/fin_model/fin_quant 场景）。有值时 task 跳过交互式 init，直接用此描述驱动假设生成（写入 `plan["user_instruction"]`，由 `LLMHypothesisGen.gen` 渲染进 system_prompt）。fin_factor_report 不接收此字段 |
 
 `scenario` 取值与后端 `target_name` 映射（**仅 Qlib 场景在本平台可用**）：
 
@@ -240,6 +241,13 @@ rdagent sota --log-path <log目录> --output code
 `GET /stdout?id=<trace_id>`
 
 响应：`text/plain` 文件流（`as_attachment`）。404 if 文件不存在；400 if trace_id 非法或路径越界（须位于 `log_folder_path` 之下）。
+
+> **HTTP Range 支持**：Flask 3.1.x 的 `send_file(as_attachment=True)` 已默认支持 Range 请求（`conditional=True`）。前端可用 `Range: bytes=<offset>-` 做增量拉取：
+> - `206 Partial Content` + `Content-Range: bytes {start}-{end}/{total}` — 正常增量片段
+> - `416 Range Not Satisfiable` + `Content-Range: bytes */{total}` — offset 超出文件尾（`total >= offset` 表示文件未增长；`total < offset` 表示文件被截断/重写，应 reset offset=0）
+> - `200 OK`（无 Range 处理时）— 全文件回退
+>
+> multialpha webUI 的 `LogConsole.vue` 使用此机制做实时日志轮询（`fetchStdoutRange`，2s 间隔），传输量保持 1.0× 文件大小（vs 全量轮询的 2288× 放大）。
 
 ### 2.5 用户交互（双向 IPC）
 
@@ -319,6 +327,69 @@ class RDAgentTask:
 ```
 
 消息标准形态：`{"tag": str, "timestamp": ISO-8601 str, "content": Any}`。
+
+### 2.10 webUI 环节 × 接口 × 产物映射
+
+> 以 **fin_factor（因子挖掘）** 为例，一个完整 loop 的数据流。每行对应一个环节：后端产生的消息 tag、前端展示它的组件、以及前端获取数据依赖的接口。
+> 消息通过 `POST /trace` 轮询获取（5s 间隔，增量模式 `all:false`）；首次进入任务详情时全量拉取（`all:true, reset:true`）。
+
+#### 全流程时序
+
+```
+任务创建（POST /upload）
+  │
+  ├─ feedback.config ──────────────────────→ 实验配置表
+  │
+  └─ Loop N（每轮重复）
+       │
+       ├─ research.hypothesis ─────────────→ 假设（策略方向）
+       ├─ [user_interaction.request] ─────→ 假设评审弹窗（仅交互模式）
+       ├─ research.tasks ─────────────────→ 因子定义（name/formula/variables）
+       ├─ evolving.codes ─────────────────→ 因子代码（factor.py）
+       ├─ evolving.feedbacks ─────────────→ 代码执行反馈
+       ├─ feedback.metric ────────────────→ 回测指标（IC/Sharpe/年化/回撤）
+       ├─ feedback.return_chart ──────────→ 回测曲线（plotly HTML）
+       ├─ [user_interaction.request] ─────→ 反馈决策弹窗（仅交互模式）
+       ├─ feedback.hypothesis_feedback ───→ 最终结论（decision/reason）
+       └─ token_cost ─────────────────────→ token 用量统计
+  │
+  └─ END ─────────────────────────────────→ 任务完成
+```
+
+> `[user_interaction.request]` 标记的环节**仅在交互模式下产生**。当 `/upload` 带 `description` 时，task 全自动跑（跳过所有交互点），不产生这两条消息。
+
+#### 环节 × tag × 前端组件 × 接口映射表
+
+| 环节 | 消息 tag | content 关键字段 | 前端展示组件 | 依赖接口 |
+|---|---|---|---|---|
+| **实验配置** | `feedback.config` | `config`（markdown 表格：Dataset/Model/Factors/DataSplit）| TaskBrief（展开后 config chips）| POST /trace |
+| **假设生成** | `research.hypothesis` | `hypothesis`, `reason`, `concise_reason`, `concise_justification`, `concise_observation`, `concise_knowledge` | TaskBrief（strategy 文本）+ AgentFlow 研究节点（点击展开假设详情）+ PipelineStages（研究阶段✓）| POST /trace |
+| **假设评审交互** | `user_interaction.request` | `{hypothesis, reason, ...}`（Hypothesis 对象字段）| UserInteractionDialog（hypothesis+reason 可编辑 textarea）| POST /user_interaction/submit（回传编辑后的 payload）|
+| **因子定义** | `research.tasks` | `[{name, description, formulation, variables}]`（数组）| TaskBrief（初始因子徽章，loop 0 的）+ AgentFlow 设计节点（stat=N 因子）| POST /trace |
+| **因子代码** | `evolving.codes` | `[{evo_id, target_task_name, workspace: {filename: code}}]` | ResultWorkspace 代码 tab（文件选择器 + pre 显示 + 复制/下载）+ AgentFlow 编码节点（stat=N 文件）| POST /trace |
+| **代码反馈** | `evolving.feedbacks` | `[{evo_id, final_decision, execution, code, return_checking}]` | AgentFlow 编码节点（内部 CoSTEER 演进数据，不直接展示）| POST /trace |
+| **回测指标** | `feedback.metric` | `result`（JSON 字符串，含 IC/ICIR/annualized_return/max_drawdown/information_ratio）| MetricsPanel（指标 grid，tone 着色）+ ResultWorkspace 结论 tab（coreMetrics 前 4）+ AgentFlow 回测节点（stat=IC=X.XXX）+ LoopSwitcher 角标（IC 值）| POST /trace |
+| **回测曲线** | `feedback.return_chart` | `chart_html`（plotly 内嵌 HTML）| ResultWorkspace 曲线 tab（iframe srcdoc 渲染）| POST /trace |
+| **反馈决策交互** | `user_interaction.request` | `{decision, reason, ...}`（HypothesisFeedback 对象字段）| UserInteractionDialog（decision select[true/false] + reason textarea）| POST /user_interaction/submit |
+| **最终结论** | `feedback.hypothesis_feedback` | `observations`, `hypothesis_evaluation`, `new_hypothesis`, `decision`, `reason`, `exception` | ResultWorkspace 结论 tab（decision chip + feedbackItems）+ AgentFlow 反馈节点（stat=已采纳/已拒绝）+ MetricsPanel（反馈摘要）| POST /trace |
+| **token 用量** | `token_cost` | `model`, `prompt_tokens`, `completion_tokens`, `cost`, `accumulated_cost` | TokenDashboard（总/输入/输出/调用次数；`cost` 的 NaN 已 sanitize 为 0.0）| POST /trace |
+| **任务完成** | `END` | `error_msg`, `end_code` | DetailHeader（状态→done）+ 前端停止轮询 | POST /trace（检测到 END 后不再请求）|
+
+#### 贯穿全流程的接口
+
+| 功能 | 接口 | 前端组件 | 说明 |
+|---|---|---|---|
+| 任务列表 | GET /traces | TaskSidebar + LandingTerminal（ticker） | 首页加载 + 刷新时调用 |
+| 实时日志 | GET /stdout（Range）| LogConsole | 2s 轮询，`Range: bytes=<offset>-` 增量拉取（206/416 响应）|
+| 任务控制 | POST /control | DetailHeader（停止按钮）| `action=stop` 终止 task |
+| 任务创建 | POST /upload | NewTaskDialog | multipart 表单（scenario/loops/description/files）|
+
+#### 交互模式 vs 自动模式（description 的影响）
+
+| 模式 | 触发条件 | user_interaction.request | UserInteractionDialog |
+|---|---|---|---|
+| **自动模式** | `/upload` 带 `description` | ❌ 不产生（`_set_interactor` 未调用 → 所有交互点跳过）| 不触发 |
+| **交互模式** | `/upload` 不带 `description`（或 CLI 带 `user_interaction_queues`）| ✅ 在假设评审 + 反馈决策环节产生 | 弹窗，用户编辑后 POST /user_interaction/submit |
 
 ---
 

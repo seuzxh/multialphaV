@@ -290,7 +290,34 @@ rdagent sota --log-path <log目录> --output code
 | `/favicon.ico` | GET | 站点图标 |
 | `/<path:fn>` | GET | 静态文件（自动剥离 `static_path` 前缀） |
 | `/test` | GET | 调试：返回所有任务的 `{msgs, pointers}` 摘要 |
+| `/health` | GET | 轻量健康检查（LLM 配置 / Docker / Qlib 数据 / Conda env / MLflow） |
 | `/traces/<trace_name>/sota` | GET | 查询某次实验的 SOTA 产物（假设/指标/因子代码/模型代码） |
+
+#### `GET /health` — 轻量健康检查
+
+不发起 LLM / Docker 实际调用，仅检查配置项和文件存在性。用于任务创建前快速验证环境。
+
+**响应**（200）：
+
+```json
+{
+  "overall": "pass" | "issues",
+  "checks": [
+    {"name": "LLM 配置", "icon": "🤖", "status": "pass"|"warn"|"fail",
+     "detail": "chat=openai/glm-5.2, embedding=openai/doubao-embedding-vision, key=已设, base=..."},
+    {"name": "Docker 环境", "icon": "🐳", "status": "pass"|"fail",
+     "detail": "Docker 正常, 镜像: local_qlib:latest"},
+    {"name": "Qlib 数据", "icon": "📊", "status": "pass"|"fail",
+     "detail": "~/.qlib/qlib_data/cn_data, 6431 天数据 (2000-01-04 ~ 2026-07-20)"},
+    {"name": "Conda 环境", "icon": "🐍", "status": "pass"|"warn",
+     "detail": "CONDA_DEFAULT_ENV=rdagent4qlib"},
+    {"name": "MLflow 配置", "icon": "📈", "status": "pass"|"warn",
+     "detail": "MLFLOW_ALLOW_FILE_STORE=true"}
+  ]
+}
+```
+
+webUI TopBar 的"🩺 健康检查"按钮调用此接口，以弹窗展示每项 pass/warn/fail 状态。
 
 #### `GET /traces/<trace_name>/sota` — SOTA 产物查询
 

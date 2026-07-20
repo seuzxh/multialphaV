@@ -89,7 +89,7 @@
 
 | 项 | 结果 |
 |---|---|
-| worktree | rdagent-frr |
+| worktree | rdagent-frr（已清理，验证后删除） |
 | 命令 | `fin_factor_report --report-folder test_reports --no-checkout` |
 | 第一次（147K PDF） | ⚠️ 提取 0 因子（688331 研报是公司分析报告，不含因子公式） |
 | 第二次（1.6M PDF） | ✅ 从研报提取因子并完整执行 Loop |

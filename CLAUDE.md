@@ -523,7 +523,12 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 - **配套文档清单**（multialphaV 根仓库，行为变更时按需同步）：
   - [`docs/COLLABORATION.md`](file:///home/zxh/projects/1.multialphaV/docs/COLLABORATION.md)：**多人协作规范**（分支策略 / 环境一致性 / Key 管理 / trace 共享 / review 流程 / 共享资源变更协议）。管"人与人/人与资源"协作，本文件管"Agent 与代码"开发约束，两者冲突时本文件优先。
   - [`docs/QLIB_SCENARIOS.md`](file:///home/zxh/projects/1.multialphaV/docs/QLIB_SCENARIOS.md)：**Qlib 四场景机制参考**（Factor / Model / Factor-from-Report / Quant 的训练机制与模型来源）。随讨论持续沉淀场景/机制类知识。
-  - [`docs/reference/API.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/API.md)：平台接口参考（CLI / HTTP / Python 库 API / 配置接口）。
+  - [`docs/FACTOR_MODEL_SELECTOR.md`](file:///home/zxh/projects/1.multialphaV/docs/FACTOR_MODEL_SELECTOR.md)：**Factor 模型选择器技术方案**（lgbm/linear/xgboost/catboost 的配置→模板→Runner→Server→前端 5 层改动 + 数据流 + 兼容性）。
+  - [`docs/WEBUI_API_MIGRATION.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_API_MIGRATION.md)：**webUI multialpha 接口迁移调研**（6 接口对比 + 实时日志 Range 轮询方案 + token_cost 断链定位 + 性能分析）。
+  - [`docs/WEBUI_FACTOR_TEST_CASES.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_FACTOR_TEST_CASES.md)：**因子挖掘场景测试用例**（10 类 TC，覆盖创建→loop 迭代→完成的环节×tag×组件×接口）。
+  - [`docs/WEBUI_FACTOR_TEST_REPORT.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_FACTOR_TEST_REPORT.md)：**因子挖掘场景测试报告**（loop 0 全流程验证结果 + NaN 修复 + sota/stdout 后续修复）。
+  - [`docs/WEBUI_TEST_ISSUES.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_TEST_ISSUES.md)：**multialpha webUI 测试问题清单**（已确认正常项 + 功能缺失 + 待验证项）。
+  - [`docs/reference/API.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/API.md)：平台接口参考（CLI / HTTP / Python 库 API / 配置接口，含 §2.10 webUI 环节×接口×产物映射）。
   - [`docs/reference/ENV.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/ENV.md)：环境配置说明（`.env` 全量字段、加载机制、死配置清单）。
   - [`docs/reference/REPOS.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/REPOS.md)：双仓库结构与 SSH 推送通道。
 - **Git 操作**：不主动 commit / push；如需提交先确认无敏感信息泄露。

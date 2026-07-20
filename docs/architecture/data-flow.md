@@ -77,7 +77,7 @@ generate.py 产出
 ## 3. Docker 执行架构
 
 ### 镜像
-- `local_qlib:v2.0`（10.7GB，qlib 0.9.7，8 卡 H20 GPU）
+- `local_qlib:v2.1`（10.7GB，qlib 0.9.7，8 卡 H20 GPU）
 - Dockerfile 从 0.8 项目同步（阿里云镜像源 + requirements.lock + 本地 qlib-src.tar.gz）
 
 ### 数据挂载（官方默认）

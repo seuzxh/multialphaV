@@ -27,7 +27,7 @@
 | 4a | CodeGraph 索引重建 | ✅ **已完成**（230 文件/3635 节点） |
 | 4b | `.gitignore` 加 `.codegraph/` | ✅ **已完成**（multialphaV 根仓库 .gitignore 第 11 行） |
 | 5 | git fork remote 配置 | ✅ **已完成**（origin→fork, upstream→microsoft） |
-| 5b | docker 配置同步 0.8 项目 | ✅ **已完成**（Dockerfile+lock+README，镜像 local_qlib:v2.0 已共享） |
+| 5b | docker 配置同步 0.8 项目 | ✅ **已完成**（Dockerfile+lock+README，镜像 local_qlib:v2.1 已共享） |
 | 6 | 验收（multialphav env 跑导入链 + CLI） | ✅ **已完成**（导入链全绿、CLI 正常、镜像就绪） |
 
 ### 阶段 3 完成说明（2026-07-18）
@@ -102,7 +102,7 @@ EMBEDDING_MODEL=openai/doubao-embedding-vision
 FACTOR_CoSTEER_PYTHON_BIN=/home/zxh/miniconda3/envs/rdagent/bin/python  # 有意指向 0.8 env（§6.1 红线，勿改）
 
 MODEL_CoSTEER_ENV_TYPE=docker
-QLIB_DOCKER_IMAGE=local_qlib:v2.0
+QLIB_DOCKER_IMAGE=local_qlib:v2.1
 QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 ```
 
@@ -239,7 +239,7 @@ python -c "import rdagent.log.server.app; print('log/server OK')"
 # 见阶段 3 验证命令
 
 # 7. Docker 镜像
-docker images | grep local_qlib   # local_qlib:v2.0
+docker images | grep local_qlib   # local_qlib:v2.1
 ```
 
 每项如实报告 ✅/❌。任何 ❌ 给出根因和修复方案。
@@ -249,7 +249,7 @@ docker images | grep local_qlib   # local_qlib:v2.0
 ## 不做的事（§8 原则 4 范围限定）
 
 - **不修改 `rdagent/` 源码**（数据归并走软链而非改 yaml，避免 §3 表登记；本计划仅改 `.gitignore`）
-- **不装 qlib 到 multialphav env**（设计上走 Docker，§6.1 已确认 `local_qlib:v2.0` 镜像就绪）
+- **不装 qlib 到 multialphav env**（设计上走 Docker，§6.1 已确认 `local_qlib:v2.1` 镜像就绪）
 - **不配置 context7 MCP server 进程**（§2.1 已是原生集成，`CONTEXT7_*` 用默认值即可，server 进程管理属运行期事务，非准备工作）
 - **不跑 test/qlib 测试套件**（依赖 qlib 数据 + Docker，属运行期验证；静态导入链验证已足够）
 - **不创建 README / 其他 docs**（§10 红线）

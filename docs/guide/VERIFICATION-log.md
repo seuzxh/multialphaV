@@ -12,7 +12,7 @@
 | conda env multialphav | ✅ Python 3.10.20 + rdagent 0.8.1.dev29 | |
 | LLM chat | ✅ glm-5.2 / 智谱 | 实测调用返回 "OK" |
 | Embedding | ✅ litellm_proxy/doubao-embedding-vision / 火山方舟 | 修复 openai/ 前缀 bug 后正常（dim=2048）|
-| Docker 镜像 | ✅ local_qlib:v2.0（qlib 0.9.7） | |
+| Docker 镜像 | ✅ local_qlib:v2.1（qlib 0.9.7，含 MLFLOW_ALLOW_FILE_STORE） | |
 | Docker GPU | ✅ 8 卡 H20 | |
 | qlib 数据 | ✅ ~/.qlib/qlib_data/cn_data（真实目录，2020-2026） | |
 | 回测日期分段 | ✅ train 2020-2022 / valid 2023-2024.6 / test 2024.7-2026.7 | .env 配了 18 个 QLIB_* 变量 |

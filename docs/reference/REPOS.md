@@ -129,9 +129,9 @@ main 在 fork 点之后有 **2 个 merge commit**：
 - `Dockerfile`（阿里云镜像源 + requirements.lock 锁依赖 + 本地 qlib-src.tar.gz）
 - `requirements.lock.txt`（161 包锁定）
 - `README.md`（构建/使用/数据挂载文档）
-- `qlib-src.tar.gz`（4.7MB，**gitignore 不入库**，按 README 用 wget 准备）
+- `qlib-src.tar.gz`（4.7MB，**已入库**，固定 qlib commit `2fb9380b`，构建关键依赖）
 
-运行时镜像 `local_qlib:v2.0`（qlib 0.9.7，10.7GB）已系统级共享，`.env` 配 `QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False` 不触发重建。
+运行时镜像 `local_qlib:v2.1`（qlib 0.9.7，10.7GB）已系统级共享，`.env` 配 `QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False` 不触发重建。镜像分发方式见 `rdagent/scenarios/qlib/docker/README.md`（源码构建 / 加载 tar 两种路径）。
 
 ---
 

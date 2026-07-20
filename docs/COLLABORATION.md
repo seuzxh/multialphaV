@@ -268,19 +268,25 @@ python -c "import qlib; from qlib.constant import REG_CN; qlib.init(provider_uri
 
 ### 2.4 Docker 镜像一致性
 
-**目标**：所有成员跑 Model 训练时用同一份镜像（`local_qlib:v2.0`，qlib 0.9.7）。
+**目标**：所有成员跑 Model 训练时用同一份镜像（`local_qlib:v2.1`，qlib 0.9.7）。
 
 **镜像来源**：
 - Dockerfile 在 `rdagent/scenarios/qlib/docker/`（已从 0.8 项目同步，CLAUDE.md §6.4）
-- 镜像 10.7GB，**不入库**（`qlib-src.tar.gz` 在 `.gitignore`）
+- 镜像 10.7GB，**不入库**；但构建依赖 `qlib-src.tar.gz`（4.7MB）**已入库**，新成员无需额外下载
 
-**新成员构建**：
+**新成员获取镜像**（两种路径，详见 `rdagent/scenarios/qlib/docker/README.md`）：
 
 ```bash
 cd ~/projects/multialphaV/RD-Agent/rdagent/scenarios/qlib/docker
-# 按 README.md 准备 qlib-src.tar.gz（wget qlib 0.9.7 源码包）
-docker build -t local_qlib:v2.0 .
-docker run --rm local_qlib:v2.0 python -c "import qlib;print(qlib.__version__)"   # 预期 0.9.7
+
+# 路径 1（最快）：加载镜像 tar（需先从维护者处获取 tar 文件）
+docker load < local_qlib-v2.1.tar.gz
+
+# 路径 2：从源码构建（qlib-src.tar.gz 已在仓库内，约 20-40 分钟）
+docker build -t local_qlib:v2.1 .
+
+# 验证
+docker run --rm local_qlib:v2.1 python -c "import qlib;print(qlib.__version__)"   # 预期 0.9.7
 ```
 
 **版本对齐**：每季度或上游 Qlib 发布新版时，全队约定升级镜像版本号（如 `v2.1`），`.env` 同步改 `QLIB_DOCKER_IMAGE=local_qlib:v2.1`。版本变更走 §6 共享资源变更协议。
@@ -555,7 +561,7 @@ Day 1：环境搭建
 
 Day 2：数据与镜像
   [ ] 按 §2.3 拉取最新 Qlib 数据，建软链
-  [ ] 按 §2.4 构建 local_qlib:v2.0 镜像
+  [ ] 按 §2.4 构建 local_qlib:v2.1 镜像
   [ ] 跑 §2.3 验证命令，与团队 first/last 日期核对
 
 Day 3：Key 与冒烟
@@ -629,7 +635,7 @@ Day 5：实战
     "market": "csi300"
   },
   "docker": {
-    "image": "local_qlib:v2.0",
+    "image": "local_qlib:v2.1",
     "qlib_version": "0.9.7"
   },
   "config_digest": "<.env 关键项的 sha256，不含 Key>",

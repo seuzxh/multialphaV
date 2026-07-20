@@ -145,10 +145,10 @@ MODEL_CoSTEER_ENV_TYPE=docker
 ```
 - **作用**：Model CoSTEER 训练执行环境类型，`docker` 或 `conda`。
 - **归属**：`ModelCoSTEERSettings.env_type`（[§3.4](#34-costeer-子系统配置)）
-- **本项目选 docker**：因为主 env `multialphav` 不装 qlib/torch，训练在 `local_qlib:v2.0` 镜像里跑。
+- **本项目选 docker**：因为主 env `multialphav` 不装 qlib/torch，训练在 `local_qlib:v2.1` 镜像里跑。
 
 ```dotenv
-QLIB_DOCKER_IMAGE=local_qlib:v2.0
+QLIB_DOCKER_IMAGE=local_qlib:v2.1
 QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 ```
 - **作用**：Qlib Docker 容器配置。
@@ -414,7 +414,7 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 | 字段 | 默认 | 决定什么 |
 |---|---|---|
 | `QLIB_DOCKER_BUILD_FROM_DOCKERFILE` | `True` | 是否从 Dockerfile 构建（本项目设 `False` 跳过） |
-| `QLIB_DOCKER_IMAGE` | `local_qlib:latest` | 镜像名（本项目 `local_qlib:v2.0`） |
+| `QLIB_DOCKER_IMAGE` | `local_qlib:latest` | 镜像名（本项目 `local_qlib:v2.1`） |
 | `QLIB_DOCKER_MOUNT_PATH` | `/workspace/qlib_workspace/` | 容器内挂载点 |
 | `QLIB_DOCKER_DEFAULT_ENTRY` | `qrun conf.yaml` | 容器入口命令 |
 | `QLIB_DOCKER_SHM_SIZE` | `16g` | 共享内存大小 |
@@ -606,7 +606,7 @@ EMBEDDING_MODEL=openai/doubao-embedding-vision
 
 # ====== 必需：Model 训练执行环境 ======
 MODEL_CoSTEER_ENV_TYPE=docker
-QLIB_DOCKER_IMAGE=local_qlib:v2.0
+QLIB_DOCKER_IMAGE=local_qlib:v2.1
 QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 
 # ====== 可选：调用参数调优 ======

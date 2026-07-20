@@ -91,7 +91,7 @@ multialphaV/
 | qlib | 0.9.7 | Docker 容器内运行 |
 | LLM | glm-5.2 | 智谱 AI |
 | Embedding | doubao-embedding-vision | 火山方舟 |
-| Docker | local_qlib:v2.0 | 10.7GB，8 卡 H20 GPU |
+| Docker | local_qlib:v2.1 | 10.7GB，8 卡 H20 GPU |
 | pydantic | 2.x | rdagent 依赖 |
 
 ## 开发约束

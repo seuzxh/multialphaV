@@ -205,7 +205,7 @@ Claude Code 环境内已挂载 `mcp_context7` MCP 服务，提供：
 | Qlib 数据（rdagent 读取） | `~/.qlib/qlib_data/cn_data`（真实目录，非软链） | qlib 官方默认路径；三个核心子目录（calendars/instruments/features）从 `/home/zxh/qlib_data` 复制而来，纯净无敏感文件；rdagent 代码硬编码读此路径，Docker 通过官方默认挂载 `~/.qlib → /root/.qlib/`（rw）访问，零代码偏离上游 |
 | conda base | `/home/zxh/miniconda3` | 仅用于基础 Python 解释器 |
 | Factor CoSTEER 解释器 | `/home/zxh/miniconda3/envs/rdagent/bin/python` | CoSTEER 子进程用，**保持指向 0.8 env** 以避免重复装包 |
-| Docker Qlib 镜像 | `local_qlib:v2.0` | 已构建，`QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False` 跳过重建 |
+| Docker Qlib 镜像 | `local_qlib:v2.1` | 已构建，`QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False` 跳过重建 |
 | GPU | 共享 | 通过 Docker device 映射使用 |
 
 ### 6.2 项目级独立 conda env（本项目专用）
@@ -272,7 +272,7 @@ FACTOR_CoSTEER_PYTHON_BIN=/home/zxh/miniconda3/envs/rdagent/bin/python
 
 # ==================== Model 训练执行环境 ====================
 MODEL_CoSTEER_ENV_TYPE=docker
-QLIB_DOCKER_IMAGE=local_qlib:v2.0
+QLIB_DOCKER_IMAGE=local_qlib:v2.1
 QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 
 # ==================== context7（原生 Agent） ====================
@@ -289,7 +289,7 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 | Python | 3.10（与官方 CI / 0.8 项目 / constraints 一致） | `python --version` |
 | rdagent | fork 点 commit（裁剪 + docker 同步后，见 `git describe` 实际值） | `git describe --tags --always`（在 RD-Agent 仓库内） |
 | rdagent 包版本（pip 元数据） | setuptools-scm 动态生成（当前 `0.8.1.dev29`） | `python -c "from importlib.metadata import version; print(version('rdagent'))"` |
-| qlib | 0.9.7（在 Docker 镜像内，主 env 不装） | `docker run --rm local_qlib:v2.0 python -c "import qlib;print(qlib.__version__)"` |
+| qlib | 0.9.7（在 Docker 镜像内，主 env 不装） | `docker run --rm local_qlib:v2.1 python -c "import qlib;print(qlib.__version__)"` |
 | pydantic | 2.x（rdagent 依赖，未 pin） | `python -c "import pydantic; print(pydantic.VERSION)"` |
 
 > **同步升级对比**：rdagent 用 `git describe` 的 commit 标识（含 tag + commit 数 + hash）跟踪 fork 点。对比上游时：`git fetch upstream && git log --oneline $(git describe --tags --always)..upstream/main` 可看出上游新增了多少 commit。

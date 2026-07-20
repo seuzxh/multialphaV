@@ -242,12 +242,16 @@ rdagent sota --log-path <log目录> --output code
 
 响应：`text/plain` 文件流（`as_attachment`）。404 if 文件不存在；400 if trace_id 非法或路径越界（须位于 `log_folder_path` 之下）。
 
+**路径解析策略**（`_resolve_stdout_path`）：
+1. **Running task**：从 `rdagent_processes` 内存查 task.stdout_path（精确路径）
+2. **历史 task**（回退）：按 trace_id 拼路径 `<trace_root>/<scenario>/<name>.log`，文件存在则返回
+
 > **HTTP Range 支持**：Flask 3.1.x 的 `send_file(as_attachment=True)` 已默认支持 Range 请求（`conditional=True`）。前端可用 `Range: bytes=<offset>-` 做增量拉取：
 > - `206 Partial Content` + `Content-Range: bytes {start}-{end}/{total}` — 正常增量片段
 > - `416 Range Not Satisfiable` + `Content-Range: bytes */{total}` — offset 超出文件尾（`total >= offset` 表示文件未增长；`total < offset` 表示文件被截断/重写，应 reset offset=0）
 > - `200 OK`（无 Range 处理时）— 全文件回退
 >
-> multialpha webUI 的 `LogConsole.vue` 使用此机制做实时日志轮询（`fetchStdoutRange`，2s 间隔），传输量保持 1.0× 文件大小（vs 全量轮询的 2288× 放大）。
+> multialpha webUI 的 `LogConsole.vue` 使用此机制做实时日志轮询（`fetchStdoutRange`，2s 间隔），传输量保持 1.0× 文件大小（vs 全量轮询的 2288× 放大）。历史 task 的 Range 下载同样支持（Strategy 2 回退）。
 
 ### 2.5 用户交互（双向 IPC）
 
@@ -291,22 +295,30 @@ rdagent sota --log-path <log目录> --output code
 #### `GET /traces/<trace_name>/sota` — SOTA 产物查询
 
 ```bash
-# 通过 trace 名查询
-curl http://localhost:19899/traces/2026-07-19_03-38-42/sota
+# 通过 trace 名查询（webUI task）
+curl http://localhost:19899/traces/Finance%20Data%20Building/plain-transformation/sota
 
-# 通过 log_path 直接指定
+# 通过 log_path 直接指定（CLI task，有 __session__/）
 curl "http://localhost:19899/traces/any/sota?log_path=log/2026-07-19_03-38-42"
 ```
 
 | 参数 | 位置 | 说明 |
 |---|---|---|
-| `trace_name` | URL path | trace 名或 log 目录名 |
+| `trace_name` | URL path | trace 名（webUI 格式 `scenario/name`）或 log 目录名 |
 | `log_path` | query | 直接指定 log 目录（跳过 trace_name 扫描） |
 
-**响应**（200）：SOTA 实验的结构化信息（loop ID、假设、反馈、指标、因子/模型代码、workspace 路径）。
-**响应**（404）：session 不存在或无 SOTA 实验时返回 `{"error": "..."}`。
+**查询策略**（按优先级）：
+1. `log_path` query 参数 → 直接用 `query_sota` 加载 `__session__/`
+2. trace_name 是有效 log 目录且含 `__session__/` → 同上
+3. `find_session_by_trace_name` 扫描 `log/` → 同上
+4. **回退：从消息流提取**（webUI task）—— `__session__/` 不存在时，从 `/trace` 消息流（`task.messages` 或 `read_trace` 从 FileStorage pickle 加载）提取 SOTA：找最后一条 `research.hypothesis` + `feedback.metric` + `evolving.codes` + `feedback.hypothesis_feedback`，组装成结构化结果（`source: "message_stream"`）
 
-实现：`rdagent/log/server/app.py:get_sota` → `rdagent/log/sota_query.py:query_sota`。
+> **webUI task vs CLI task 的差异**：CLI task 的 session 存在 `log/<timestamp>/__session__/`（LoopBase.dump 格式），sota 查询直接加载；webUI task 的 FileStorage pickle 在 `<trace_root>/<scenario>/<name>/` 下，但 `__session__/` 不存在（session_folder 用的是默认 `LOG_SETTINGS.trace_path`）。回退策略 4 解决了这个差异。
+
+**响应**（200）：SOTA 实验的结构化信息（loop ID、假设、反馈、指标、因子/模型代码、workspace 路径）。回退模式额外含 `"source": "message_stream"`。
+**响应**（404）：session/消息流均不存在或无 SOTA 数据时返回 `{"error": "..."}`。
+
+实现：`rdagent/log/server/app.py:get_sota` → `query_sota`（session 模式）/ `_sota_from_messages`（消息流回退模式）。
 
 ### 2.9 核心数据结构
 

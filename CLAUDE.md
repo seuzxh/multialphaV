@@ -528,6 +528,7 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
   - [`docs/WEBUI_FACTOR_TEST_CASES.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_FACTOR_TEST_CASES.md)：**因子挖掘场景测试用例**（10 类 TC，覆盖创建→loop 迭代→完成的环节×tag×组件×接口）。
   - [`docs/WEBUI_FACTOR_TEST_REPORT.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_FACTOR_TEST_REPORT.md)：**因子挖掘场景测试报告**（loop 0 全流程验证结果 + NaN 修复 + sota/stdout 后续修复）。
   - [`docs/WEBUI_TEST_ISSUES.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_TEST_ISSUES.md)：**multialpha webUI 测试问题清单**（已确认正常项 + 功能缺失 + 待验证项）。
+  - [`docs/WEBUI_PERFORMANCE_AUDIT.md`](file:///home/zxh/projects/1.multialphaV/docs/WEBUI_PERFORMANCE_AUDIT.md)：**webUI 性能审计报告**（18 个问题 P0-P4 + 7 项已优化 + 多租户评估）。
   - [`docs/reference/API.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/API.md)：平台接口参考（CLI / HTTP / Python 库 API / 配置接口，含 §2.10 webUI 环节×接口×产物映射）。
   - [`docs/reference/ENV.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/ENV.md)：环境配置说明（`.env` 全量字段、加载机制、死配置清单）。
   - [`docs/reference/REPOS.md`](file:///home/zxh/projects/1.multialphaV/docs/reference/REPOS.md)：双仓库结构与 SSH 推送通道。

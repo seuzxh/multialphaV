@@ -317,9 +317,11 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 | `<X>VALID_START` | `2015-01-01` | 验证集开始 |
 | `<X>VALID_END` | `2016-12-31` | 验证集结束 |
 | `<X>TEST_START` | `2017-01-01` | 测试集开始 |
-| `<X>TEST_END` | `2020-08-01` | 测试集结束 |
+| `<X>TEST_END` | `auto` | 测试集结束（`auto` = qlib 最新交易日，见下） |
 
-例：`QLIB_FACTOR_TEST_END=2026-07-17`、`QLIB_QUANT_VALID_START=2020-01-01`。这些值最终注入 Qlib 模板的 `conf_*.yaml`，决定回测时间窗。
+`TEST_END=auto`：每次跑 rdagent 时自动取 qlib 最新交易日（`D.calendar(freq='day')[-1]`），无需手动改。由 `rdagent/app/qlib_rd_loop/conf.py` 的 `field_validator` 解析。设成具体日期（如 `2026-07-17`）则使用固定值。
+
+例：`QLIB_FACTOR_TEST_END=auto`、`QLIB_QUANT_VALID_START=2020-01-01`。这些值最终注入 Qlib 模板的 `conf_*.yaml`，决定回测时间窗。
 
 #### Factor 验证模型选择器（`QLIB_FACTOR_MODEL_SELECTOR`）
 
@@ -613,8 +615,8 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 CHAT_TEMPERATURE=0.6
 CHAT_MAX_TOKENS=16384
 
-# ====== 可选：训练/验证/测试日期（默认 2008-01-01 ~ 2020-08-01） ======
-# QLIB_FACTOR_TEST_END=2026-07-17
+# ====== 可选：训练/验证/测试日期（test_end 默认 auto = qlib 最新交易日）======
+# QLIB_FACTOR_TEST_END=auto
 # QLIB_MODEL_TRAIN_START=2010-01-01
 # QLIB_QUANT_VALID_END=2018-12-31
 

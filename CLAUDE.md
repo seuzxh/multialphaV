@@ -48,7 +48,7 @@
    - `rdagent/scenarios/qlib/`：Qlib 场景的 Scenario / Developer / Experiment 实现
    - `rdagent/app/qlib_rd_loop/`：fin_quant CLI 入口与因子/模型 Loop 装配
    - `rdagent/components/coder/CoSTEER/`：CoSTEER 自演化子系统
-   - `rdagent/components/agent/context7/`：**原生 context7 集成**（见 §3）
+   - `rdagent/components/agent/context7/`：**原生 context7 集成**（见 §2.1.2）
 5. **历史变更**：相关 Issue / PR / Commit，特别是 fork 点之后上游的更新。
 
 ### 1.2 必须确认的上下文（每次任务前自问）
@@ -60,30 +60,36 @@
 
 ---
 
-## 2. Context7 作为上下文处理环境（强制）
+## 2. 文档检索环境（强制）
 
-> 本项目**指定 context7 作为官方上下文 / 文档检索环境**。
+> 本项目**指定 `find-docs` 技能作为 agent 查文档 / GitHub 内容的官方检索途径**。
+> rdagent 运行时的 context7 集成见 §2.1（二者用途不同：前者是 agent 主动查文档，后者是 rdagent 跑实验时自动查）。
 
-### 2.1 优先使用原生集成
+### 2.1 agent 查文档规则 + rdagent 原生 context7 集成
+
+#### 2.1.1 agent 查文档（适用本 agent）
+
+**规则**：
+- 任何涉及"框架 API 不确定"、"第三方库报错"、"需要查官方用法"、"GitHub 源码 / 文档查询"的场景，**优先调用 `find-docs` 技能**，而非凭记忆推断或直接 WebSearch。
+- `find-docs` 技能位于 `/home/zxh/.agents/skills/find-docs/`，底层用 `npx ctx7@latest` CLI（两步：`library <name> "<query>"` 解析库 ID → `docs <libraryId> "<query>"` 查文档）。
+- 不要重新实现文档检索逻辑；如需查 GitHub raw 文件，用 `find-docs` 拿到的库 ID 定位文档。
+
+#### 2.1.2 rdagent 运行时的原生 context7 集成（事实陈述，非 agent 规则）
 
 最新版 rdagent 已**内置 context7 Agent**：[`rdagent/components/agent/context7/__init__.py`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/components/agent/context7/__init__.py)
 
 - 类：`rdagent.components.agent.context7.Agent`（继承 `PAIAgent`）
 - 后端：`MCPServerStreamableHTTP`（Streamable HTTP MCP）
 - 配置：[`rdagent/components/agent/context7/conf.py`](file:///home/zxh/projects/1.multialphaV/RD-Agent/rdagent/components/agent/context7/conf.py) 中的 `SETTINGS.url` / `SETTINGS.timeout` / `SETTINGS.enable_cache`
-- 用途：将错误信息 / 代码上下文构造为增强查询，调用 context7 检索文档与示例。
+- 用途：rdagent 跑实验遇到错误时，自动把错误信息 / 代码上下文构造为增强查询，调用 context7 检索文档与示例。
+- 扩展时复用 `PAIAgent` 基类与 `T(".prompts:...")` 模板机制，不要重新实现文档检索逻辑。
 
-**规则**：
-- 任何涉及"框架 API 不确定"、"第三方库报错"、"需要查官方用法"的场景，**优先调用 context7 Agent**，而非凭记忆推断。
-- 不要重新实现文档检索逻辑；扩展时复用 `PAIAgent` 基类与 `T(".prompts:...")` 模板机制。
+### 2.2 find-docs 调用约定
 
-### 2.2 MCP 工具直接访问
-
-Claude Code 环境内已挂载 `mcp_context7` MCP 服务，提供：
-- `resolve-library-id`：把库名解析为 context7 内部 ID
-- `query-docs`：按库 ID 检索文档片段
-
-调用前**必须**先用 LS / Read 读取 `~/.trae-cn/mcps/*/mcp_context7/tools/*.json` 确认 schema，参数放入 `args` 字段。
+- 技能路径：`/home/zxh/.agents/skills/find-docs/SKILL.md`（不在默认 `~/.zcode/skills/` 下，属 `.agents` 体系）
+- 调用前**必须** Read `/home/zxh/.agents/skills/find-docs/SKILL.md` 确认最新调用方式（`npx ctx7@latest` 两步流程）
+- 限制：单问题最多调 3 次（技能约定）；超出后用已有最佳结果
+- 网络要求：CLI 需要 DNS 可达，sandbox 内若失败需在沙箱外重试
 
 ---
 

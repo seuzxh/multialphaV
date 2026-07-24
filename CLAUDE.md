@@ -545,7 +545,9 @@ QLIB_DOCKER_BUILD_FROM_DOCKERFILE=False
 ## 12. 常用自检命令
 
 ```bash
-# 进入项目独立 conda env
+# ⚠️ 所有 rdagent 命令必须在 RD-Agent/ 目录下执行
+# 原因：cli.py 的 load_dotenv(".env") 用相对路径，cwd 必须是 RD-Agent/ 才能找到 .env
+# 否则 CONDA_DEFAULT_ENV / LLM_KEY 等配置不会被加载，task 子进程会因 CondaConf 校验失败
 conda activate multialphav
 cd /home/zxh/projects/1.multialphaV/RD-Agent
 

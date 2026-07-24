@@ -21,7 +21,7 @@
 ## 0. 测试环境与已验证项
 
 **环境**：
-- 后端：`rdagent server_ui --port 19899`，带 `CONDA_DEFAULT_ENV=rdagent4qlib` + `MLFLOW_ALLOW_FILE_STORE=true`（环境变量缺失会导致 task 子进程 ValidationError）
+- 后端：`cd ~/projects/multialphaV/RD-Agent && rdagent server_ui --port 19899`（必须在 RD-Agent/ 目录下执行，确保 `.env` 被加载）。`.env` 里需有 `CONDA_DEFAULT_ENV=rdagent4qlib` + `MLFLOW_ALLOW_FILE_STORE=true`
 - 前端：`npm run dev`（vite，端口浮动 8080/8081/8082），proxy 指向本地 19899
 - 代码：main 分支 `d0b28772`（含 token_cost 修复 + Range 轮询 + description 修复）
 

@@ -125,8 +125,12 @@ rdagent ui [--port 19899] [--log_dir ""] [--debug]
 #### `rdagent server_ui` — 启动 Flask 实时日志服务（含任务派发）
 
 ```bash
+# ⚠️ 必须在 RD-Agent/ 目录下执行（load_dotenv 用相对路径找 .env）
+cd ~/projects/multialphaV/RD-Agent
 rdagent server_ui [--port 19899]
 ```
+
+> **cwd 要求**：`cli.py` 的 `load_dotenv(".env")` 用相对路径，cwd 必须是 RD-Agent/ 仓库根目录。否则 `.env` 不会被加载，`CONDA_DEFAULT_ENV` / LLM Key 等配置缺失，task 子进程会因 `CondaConf` 校验失败而秒退。
 
 实现：`rdagent/app/cli.py:server_ui` → `rdagent/log/server/app.py:main`。HTTP 路由见 [§2](#2-http-apiflask-服务)。
 

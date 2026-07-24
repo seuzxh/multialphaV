@@ -165,7 +165,7 @@ git rebase upstream/main
 
 | 门槛 | 触发条件 | 验证方式 |
 |---|---|---|
-| 冒烟测试通过 | 所有 PR | `conda activate multialphav && rdagent health_check` + `rdagent fin_factor --loop_n 1`（最小循环不崩） |
+| 冒烟测试通过 | 所有 PR | `cd RD-Agent && conda activate multialphav && rdagent health_check` + `rdagent fin_factor --loop_n 1`（必须在 RD-Agent/ 目录下执行） |
 | CodeGraph 影响分析 | 改 `rdagent/core/` / `components/workflow/` / `scenarios/qlib/` | PR 描述附 CodeGraph `Show Callers` / `Show Impact` 结果截图 |
 | 异构实现登记 | 触发 CLAUDE.md §4 红旗 | PR 描述附 §4.2 异构清单表 |
 | 多 Agent 审查（≥3 份） | 触发 CLAUDE.md §8 原则 3 | `docs/review/<task>-<agent>.md` 留档，任一否决不得合入 |
@@ -208,7 +208,10 @@ cd ~/projects/multialphaV/RD-Agent && pip install -e .
 # 5. 准备 Qlib 数据（见 §2.3）
 # 6. 拉取/构建 Docker 镜像（见 §2.4）
 # 7. 创建 .env（见 §3，从维护者拿模板，填自己的 Key）
-# 8. 跑冒烟
+#    ⚠️ .env 必须放在 RD-Agent/ 目录下（与 rdagent 代码同级）
+#    ⚠️ 所有 rdagent 命令都必须在 RD-Agent/ 目录下执行（load_dotenv 用相对路径）
+# 8. 跑冒烟（必须在 RD-Agent/ 目录下）
+cd ~/projects/multialphaV/RD-Agent
 rdagent health_check
 rdagent fin_factor --loop_n 1
 ```
